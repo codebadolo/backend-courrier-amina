@@ -6,7 +6,7 @@ from .views import (
     PieceJointeViewSet, ModeleCourrierViewSet,
     ImputationDashboardViewSet, CourrierDownloadTextView,
     AgentServiceDashboardViewSet, CourrierAnalyzeAIView,
-    CourrierTraitementViewSet
+    CourrierTraitementViewSet, GenererPDFView,
 )
 
 router = DefaultRouter()
@@ -48,5 +48,20 @@ urlpatterns = [
         CourrierViewSet.as_view({'post': 'consulter_service'}), 
         name='courrier-consulter-service'),
    
-    path('courriers//nouveau/soumettre-validation/' , CourrierTraitementViewSet.as_view({'post':'soumettre_validation'}) ,name='soumettre_validation')    
+    path('courriers/<int:pk>/soumettre-validation/', 
+        CourrierTraitementViewSet.as_view({'post': 'soumettre_validation'}), 
+        name='soumettre-validation'),
+    path('courriers/generer-pdf/', GenererPDFView.as_view(), name='generer-pdf'), 
+
+
+    path('courriers/<int:pk>/soumettre-validation/', 
+         CourrierViewSet.as_view({'post': 'soumettre_validation'}), 
+         name='courrier-soumettre-validation'),
+    path('courriers/<int:pk>/valider/', 
+         CourrierViewSet.as_view({'post': 'valider'}), 
+         name='courrier-valider'),
+    path('courriers/<int:pk>/signer/',CourrierViewSet.as_view({'post': 'signer'}), name='courrier-signer'),
+    path('courriers/<int:pk>/envoyer/', 
+         CourrierViewSet.as_view({'post': 'envoyer'}), 
+         name='courrier-envoyer'),
 ]

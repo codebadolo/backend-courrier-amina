@@ -22,7 +22,7 @@ from .serializers import (
     RolePermissionSerializer,
 )
 
-
+from .serializers import UserSerializer
 User = get_user_model()
 
 
@@ -178,6 +178,13 @@ def get_role_choices(request):
         {"value": "agent_service", "label": "Agent de service"},
     ]
     return Response(roles)
+    
+@api_view(['GET'])
+def get_current_user(request):
+    """Retourne les informations de l'utilisateur connecté"""
+    serializer = UserSerializer(request.user)
+    return Response(serializer.data)
+
 # Role, Permission & RolePermission
 # -------------------------
 class RoleViewSet(viewsets.ModelViewSet):

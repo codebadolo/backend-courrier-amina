@@ -162,19 +162,12 @@ USE_I18N = True
 USE_TZ = True
 
 CORS_ALLOWED_ORIGINS = [
- 
     "http://localhost:3000",
     "http://127.0.0.1:3000",
-
-]
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",
-     "http://127.0.0.1:3000",
-    
 ]
 
 CORS_ALLOW_CREDENTIALS = True
-CORS_ALLOW_ALL_ORIGINS: True
+CORS_ALLOW_ALL_ORIGINS = False
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
@@ -190,6 +183,39 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # settings.py
 SESSION_COOKIE_SECURE = False
 CSRF_COOKIE_SECURE = False
+
+CORS_ALLOW_METHODS = [
+    'DELETE',
+    'GET',
+    'OPTIONS',
+    'PATCH',
+    'POST',
+    'PUT',
+]
+
+CORS_ALLOW_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+]
+
+# Configuration CSRF pour les requêtes cross-origin
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+]
+
+# Ajoutez le préfixe API dans les trusted origins si nécessaire
+CSRF_TRUSTED_ORIGINS.extend([
+    "http://localhost:3000/api",
+    "http://127.0.0.1:3000/api",
+])
 
 import os
 # Configuration Gemini

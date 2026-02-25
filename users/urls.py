@@ -6,7 +6,8 @@ from .views import (
     RoleViewSet,
     PermissionViewSet, 
     RolePermissionViewSet,
-    get_role_choices  # <-- IMPORTEZ LA FONCTION
+    get_role_choices,
+    get_current_user,  
 )
 
 router = DefaultRouter()
@@ -19,4 +20,5 @@ router.register("role-permissions", RolePermissionViewSet, basename="role-permis
 urlpatterns = [
     path('', include(router.urls)),
     path('role-choices/', get_role_choices, name='role-choices'),
+    path('me/', get_current_user, name='current-user'),
 ]
