@@ -1051,12 +1051,797 @@ class CourrierViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
+    # Dans courriers/views.py - Classe CourrierViewSet
+
+# Dans courriers/views.py - Classe CourrierViewSet
+
+    @action(detail=True, methods=['get'], permission_classes=[IsAuthenticated])
+    def membres_service(self, request, pk=None):
+        """
+        Liste les membres du service du courrier (agents et collaborateurs)
+        """
+        try:
+            courrier = self.get_object()
+            user = request.user
+            
+            # Vérifier que l'utilisateur est chef du service
+            if user.role != 'chef' or user.service != courrier.service_actuel:
+                return Response(
+                    {"error": "Vous n'êtes pas autorisé à voir les membres de ce service"},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+            
+            # Récupérer les membres du service
+            from django.contrib.auth import get_user_model
+            User = get_user_model()
+            
+            membres = User.objects.filter(
+                service=courrier.service_actuel,
+                actif=True
+            ).values(
+                'id', 'prenom', 'nom', 'email', 'role'
+            ).order_by('role', 'prenom', 'nom')
+            
+            # Séparer par rôle pour faciliter l'affichage
+            collaborateurs = [m for m in membres if m['role'] == 'collaborateur']
+            agents = [m for m in membres if m['role'] == 'agent_service']
+            
+            return Response({
+                'courrier': {
+                    'id': courrier.id,
+                    'reference': courrier.reference,
+                    'objet': courrier.objet,
+                    'service': courrier.service_actuel.nom if courrier.service_actuel else None
+                },
+                'collaborateurs': collaborateurs,
+                'agents': agents,
+                'total': len(membres)
+            })
+            
+        except Exception as e:
+            logger.error(f"Erreur membres_service: {str(e)}")
+            return Response(
+                {"error": str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+
+    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
+    def affecter_membre(self, request, pk=None):
+        """
+        Affecte un courrier à un collaborateur ou agent du service
+        """
+        try:
+            with transaction.atomic():
+                courrier = self.get_object()
+                user = request.user
+                membre_id = request.data.get('membre_id')
+                commentaire = request.data.get('commentaire', '')
+                instructions = request.data.get('instructions', '')
+                delai_jours = request.data.get('delai_jours', 5)
+                
+                # Vérifications
+                if not membre_id:
+                    return Response(
+                        {"error": "L'ID du membre est requis"},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+                
+                # Vérifier que l'utilisateur est chef du service
+                if user.role != 'chef' or user.service != courrier.service_actuel:
+                    return Response(
+                        {"error": "Vous n'êtes pas autorisé à affecter ce courrier"},
+                        status=status.HTTP_403_FORBIDDEN
+                    )
+                
+                # Récupérer le membre
+                from django.contrib.auth import get_user_model
+                User = get_user_model()
+                
+                try:
+                    membre = User.objects.get(
+                        id=membre_id,
+                        service=courrier.service_actuel,
+                        role__in=['collaborateur', 'agent_service'],
+                        actif=True
+                    )
+                except User.DoesNotExist:
+                    return Response(
+                        {"error": "Membre non trouvé dans ce service"},
+                        status=status.HTTP_404_NOT_FOUND
+                    )
+                
+                # Affecter le courrier
+                courrier.responsable_actuel = membre
+                courrier.agent_traitant = membre
+                courrier.statut = 'traitement'
+                courrier.traitement_statut = 'prise_en_charge'
+                courrier.delai_traitement_jours = delai_jours
+                
+                # Recalculer la date d'échéance
+                if delai_jours and courrier.date_reception:
+                    courrier.date_echeance = courrier.date_reception + timedelta(days=delai_jours)
+                
+                courrier.save()
+                
+                # Créer une instruction
+                if instructions:
+                    InstructionCourrier.objects.create(
+                        courrier=courrier,
+                        type_instruction='assignation',
+                        instruction=instructions,
+                        agent_assignee=membre,
+                        date_echeance=courrier.date_echeance,
+                        statut='en_attente'
+                    )
+                
+                # Créer une étape de traitement
+                TraitementEtape.objects.create(
+                    courrier=courrier,
+                    type_etape='prise_en_charge',
+                    agent=membre,
+                    description=f"Affecté par {user.get_full_name()}",
+                    commentaire=commentaire,
+                    statut='en_cours',
+                    date_debut=timezone.now()
+                )
+                
+                # Journaliser
+                ActionHistorique.objects.create(
+                    courrier=courrier,
+                    user=user,
+                    action="AFFECTATION_MEMBRE",
+                    commentaire=f"Affecté à {membre.get_full_name()} ({membre.role})"
+                )
+                
+                serializer = CourrierDetailSerializer(courrier, context={'request': request})
+                
+                return Response({
+                    "success": True,
+                    "message": f"Courrier affecté à {membre.get_full_name()}",
+                    "courrier": serializer.data
+                })
+                
+        except Exception as e:
+            logger.error(f"Erreur affectation membre: {str(e)}")
+            return Response(
+                {"error": str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+
+    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
+    def traiter_courrier(self, request, pk=None):
+        """
+        Marquer un courrier comme traité (pour les agents/collaborateurs)
+        """
+        try:
+            courrier = self.get_object()
+            user = request.user
+            reponse = request.data.get('reponse', '')
+            commentaire = request.data.get('commentaire', '')
+            
+            # Vérifier que l'utilisateur est bien le responsable
+            if courrier.responsable_actuel != user:
+                return Response(
+                    {"error": "Vous n'êtes pas le responsable de ce courrier"},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+            
+            with transaction.atomic():
+                # Mettre à jour le statut
+                courrier.statut = 'repondu'
+                courrier.traitement_statut = 'termine'
+                courrier.date_fin_traitement = timezone.now()
+                courrier.date_cloture = timezone.now().date()
+                
+                # Sauvegarder la réponse si fournie
+                if reponse:
+                    # Créer une réponse associée
+                    reponse_obj = CourrierReponse.objects.create(
+                        courrier_origine=courrier,
+                        type_reponse='email',
+                        objet=f"RE: {courrier.objet}",
+                        contenu=reponse,
+                        destinataires=[courrier.expediteur_email] if courrier.expediteur_email else [],
+                        redacteur=user,
+                        statut='envoye'
+                    )
+                    courrier.reponse_associee = reponse_obj
+                
+                courrier.save()
+                
+                # Terminer l'étape en cours
+                etape_en_cours = TraitementEtape.objects.filter(
+                    courrier=courrier,
+                    agent=user,
+                    statut='en_cours'
+                ).first()
+                
+                if etape_en_cours:
+                    etape_en_cours.statut = 'termine'
+                    etape_en_cours.date_fin = timezone.now()
+                    etape_en_cours.save()
+                
+                # Journaliser
+                ActionHistorique.objects.create(
+                    courrier=courrier,
+                    user=user,
+                    action="TRAITEMENT_TERMINE",
+                    commentaire=commentaire or "Courrier traité"
+                )
+                
+                serializer = CourrierDetailSerializer(courrier, context={'request': request})
+                
+                return Response({
+                    "success": True,
+                    "message": "Courrier marqué comme traité",
+                    "courrier": serializer.data
+                })
+                
+        except Exception as e:
+            logger.error(f"Erreur traitement courrier: {str(e)}")
+            return Response(
+                {"error": str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+
+    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
+    def mes_courriers_a_traiter(self, request, pk=None):
+        """
+        Pour un membre (agent/collaborateur), liste ses courriers à traiter
+        """
+        try:
+            user = request.user
+            
+            # Vérifier que l'utilisateur est agent ou collaborateur
+            if user.role not in ['agent_service', 'collaborateur']:
+                return Response(
+                    {"error": "Accès non autorisé"},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+            
+            # Courriers assignés à cet utilisateur
+            courriers = Courrier.objects.filter(
+                responsable_actuel=user,
+                archived=False,
+                statut='traitement'
+            ).select_related('category', 'service_impute', 'created_by')
+            
+            # Statistiques
+            stats = {
+                'total': courriers.count(),
+                'urgents': courriers.filter(priorite='urgente').count(),
+                'en_retard': courriers.filter(
+                    date_echeance__lt=timezone.now().date()
+                ).count(),
+                'a_traiter_aujourd_hui': courriers.filter(
+                    date_echeance=timezone.now().date()
+                ).count()
+            }
+            
+            # Pagination
+            page = int(request.query_params.get('page', 1))
+            page_size = int(request.query_params.get('page_size', 10))
+            start = (page - 1) * page_size
+            end = start + page_size
+            
+            courriers_page = courriers.order_by(
+                '-priorite', 'date_echeance', '-created_at'
+            )[start:end]
+            
+            return Response({
+                'stats': stats,
+                'courriers': CourrierListSerializer(courriers_page, many=True, context={'request': request}).data,
+                'total': courriers.count(),
+                'page': page,
+                'page_size': page_size,
+                'total_pages': (courriers.count() + page_size - 1) // page_size
+            })
+            
+        except Exception as e:
+            logger.error(f"Erreur mes_courriers_a_traiter: {str(e)}")
+            return Response(
+                {"error": str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+    
+    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
+    def envoyer_a(self, request, pk=None):
+        """
+        Transmet le courrier à un autre utilisateur du système (envoi interne)
+        """
+        try:
+            courrier = self.get_object()
+            user = request.user
+            destinataire_id = request.data.get('destinataire_id')
+            commentaire = request.data.get('commentaire', '')
+            
+            if not destinataire_id:
+                return Response(
+                    {"error": "L'ID du destinataire est requis"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            # Récupérer le destinataire
+            try:
+                destinataire = User.objects.get(id=destinataire_id, actif=True)
+            except User.DoesNotExist:
+                return Response(
+                    {"error": "Destinataire non trouvé"},
+                    status=status.HTTP_404_NOT_FOUND
+                )
+            
+            # Nom complet du destinataire
+            destinataire_nom = f"{destinataire.prenom} {destinataire.nom}".strip()
+            
+            # Sauvegarder l'ancien responsable pour l'historique
+            ancien_responsable = courrier.responsable_actuel
+            
+            # 🔴 IMPORTANT: Mettre à jour TOUS les champs nécessaires
+            courrier.responsable_actuel = destinataire
+            courrier.service_actuel = destinataire.service  # Mettre à jour le service
+            courrier.statut = 'traitement'  # Changer le statut
+            courrier.traitement_statut = 'prise_en_charge'
+            courrier.save()
+            
+            # Créer une notification interne (via historique)
+            ActionHistorique.objects.create(
+                courrier=courrier,
+                user=user,
+                action="TRANSMISSION_INTERNE",
+                commentaire=f"Courrier transmis à {destinataire_nom} - {commentaire}"
+            )
+            
+            # Retourner les informations complètes
+            serializer = CourrierDetailSerializer(courrier, context={'request': request})
+            
+            return Response({
+                "success": True,
+                "message": f"Courrier transmis avec succès à {destinataire_nom}",
+                "destinataire": {
+                    "id": destinataire.id,
+                    "nom": destinataire_nom,
+                    "email": destinataire.email,
+                    "role": destinataire.role,
+                    "service": destinataire.service.nom if destinataire.service else None
+                },
+                "courrier": serializer.data
+            })
+            
+        except Exception as e:
+            logger.error(f"Erreur transmission interne: {str(e)}", exc_info=True)
+            return Response(
+                {"error": f"Erreur lors de la transmission: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+        
+    def _generate_pdf_buffer(self, courrier):
+        """Génère le PDF du courrier et retourne un buffer"""
+        from reportlab.pdfgen import canvas
+        from reportlab.lib.pagesizes import A4
+        from reportlab.lib.colors import HexColor, black, grey
+        from datetime import datetime
+        import io
+        import os
+        
+        buffer = io.BytesIO()
+        width, height = A4
+        margin = 50
+        right_margin = width - margin
+        
+        p = canvas.Canvas(buffer, pagesize=A4)
+        
+        # Référence en haut à droite
+        p.setFont("Helvetica", 10)
+        p.setFillColor(black)
+        p.drawRightString(right_margin, height - 60, courrier.reference)
+        
+        # Date
+        if courrier.date_envoi:
+            date_text = f"Ouagadougou, le {courrier.date_envoi.strftime('%d %B %Y')}"
+        else:
+            date_text = f"Ouagadougou, le {datetime.now().strftime('%d %B %Y')}"
+        p.drawRightString(right_margin, height - 120, date_text)
+        
+        # Expéditeur/Destinataire
+        y = height - 200
+        p.setFont("Helvetica", 11)
+        p.drawString(margin, y, "Le Directeur Général de Zepintel")
+        y -= 20
+        p.setFont("Helvetica-Bold", 11)
+        p.drawString(margin, y, "A")
+        y -= 25
+        p.setFont("Helvetica", 11)
+        if courrier.destinataire_nom:
+            p.drawString(margin, y, courrier.destinataire_nom)
+            y -= 8
+        y -= 100
+        
+        # Objet
+        p.setFont("Helvetica-Bold", 11)
+        p.drawString(margin, y, f"Objet : {courrier.objet}")
+        y -= 30
+        
+        # Contenu
+        if courrier.contenu_texte:
+            p.setFont("Helvetica", 10)
+            paragraphs = courrier.contenu_texte.split('\n\n')
+            for para in paragraphs:
+                if not para.strip():
+                    continue
+                lines = para.split('\n')
+                for line in lines:
+                    if not line.strip():
+                        y -= 10
+                        continue
+                    if y < 100:
+                        p.showPage()
+                        y = height - 50
+                    # Découper les longues lignes
+                    if len(line) > 90:
+                        words = line.split()
+                        current_line = ""
+                        for word in words:
+                            if len(current_line + " " + word) <= 90:
+                                if current_line:
+                                    current_line += " " + word
+                                else:
+                                    current_line = word
+                            else:
+                                p.drawString(margin + 10, y, current_line)
+                                y -= 15
+                                current_line = word
+                        if current_line:
+                            p.drawString(margin + 10, y, current_line)
+                            y -= 15
+                    else:
+                        p.drawString(margin + 10, y, line)
+                        y -= 15
+                y -= 10
+        
+        # Formule de politesse
+        y -= 10
+        p.setFont("Helvetica", 10)
+        formule = "Dans l'attente de votre retour, nous vous prions d'agréer, Monsieur le Directeur Général, l'expression de nos salutations distinguées."
+        # Découper la formule si nécessaire
+        if len(formule) > 90:
+            words = formule.split()
+            current_line = ""
+            for word in words:
+                if len(current_line + " " + word) <= 90:
+                    if current_line:
+                        current_line += " " + word
+                    else:
+                        current_line = word
+                else:
+                    p.drawString(margin, y, current_line)
+                    y -= 15
+                    current_line = word
+            if current_line:
+                p.drawString(margin, y, current_line)
+                y -= 15
+        else:
+            p.drawString(margin, y, formule)
+            y -= 15
+        
+        # Signature
+        y -= 10
+        p.setFont("Helvetica-Bold", 11)
+        signataire = "Le Directeur Général"
+        p.drawString(margin, y, signataire)
+        
+        # Pied de page
+        p.setFont("Helvetica", 7)
+        p.setFillColor(grey)
+        p.drawString(margin, 30, "ZEPINTEL - 1200 Logements, Ouagadougou - Tél: +226 25 46 36 86 / +226 60 60 60 19")
+        p.drawString(margin, 18, "Email: contact@zepintel.com - Site: www.zepintel.com")
+        p.drawRightString(right_margin, 30, f"Réf: {courrier.reference}")
+        
+        p.showPage()
+        p.save()
+        
+        buffer.seek(0)
+        
+        # Fusionner avec l'en-tête
+        try:
+            entete_path = r"C:\MesProjets\gestion_courrier\frontend-admin-courrier-amina\public\images\Papier entete zepintel_vf.pdf"
+            if os.path.exists(entete_path):
+                buffer = fusionner_avec_entete(buffer, entete_path)
+        except Exception as e:
+            logger.error(f"Erreur fusion en-tête: {e}")
+        
+        return buffer 
+   
+    @action(detail=True, methods=['get'], permission_classes=[IsAuthenticated])
+    def destinataires_disponibles(self, request, pk=None):
+        """
+        Liste les utilisateurs disponibles pour la transmission
+        """
+        try:
+            courrier = self.get_object()
+            user = request.user
+            
+            # Exclure l'utilisateur courant
+            destinataires = User.objects.filter(
+                actif=True
+            ).exclude(
+                id=user.id
+            ).values(
+                'id', 'prenom', 'nom', 'email', 'role', 'service__nom'
+            ).order_by('role', 'prenom', 'nom')
+            
+            # Ajouter le nom complet et le service
+            for d in destinataires:
+                d['full_name'] = f"{d['prenom']} {d['nom']}".strip()
+                d['service_nom'] = d['service__nom'] or 'Aucun service'
+                d['role_label'] = self._get_role_label(d['role'])
+            
+            return Response({
+                'destinataires': destinataires,
+                'total': len(destinataires)
+            })
+            
+        except Exception as e:
+            logger.error(f"Erreur destinataires_disponibles: {str(e)}")
+            return Response(
+                {"error": str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+    def _get_role_label(self, role):
+        """Retourne le libellé du rôle"""
+        labels = {
+            'admin': 'Administrateur',
+            'chef': 'Chef de service',
+            'direction': 'Direction',
+            'collaborateur': 'Collaborateur',
+            'agent_courrier': 'Agent courrier',
+            'agent_service': 'Agent de service',
+            'archiviste': 'Archiviste'
+        }
+        return labels.get(role, role)
+
+# Dans courriers/views.py - Classe CourrierViewSet
+
+    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
+    def transmettre_interne(self, request, pk=None):
+        """
+        Transmet un courrier interne à un autre service/utilisateur
+        """
+        try:
+            courrier = self.get_object()
+            user = request.user
+            destinataire_service_id = request.data.get('service_id')
+            destinataire_user_id = request.data.get('user_id')
+            commentaire = request.data.get('commentaire', '')
+            
+            if not destinataire_service_id and not destinataire_user_id:
+                return Response(
+                    {"error": "Veuillez spécifier un service ou un utilisateur destinataire"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            with transaction.atomic():
+                # Récupérer le service destinataire
+                service_dest = None
+                user_dest = None
+                
+                if destinataire_service_id:
+                    try:
+                        service_dest = Service.objects.get(id=destinataire_service_id)
+                    except Service.DoesNotExist:
+                        return Response({"error": "Service non trouvé"}, status=404)
+                
+                if destinataire_user_id:
+                    try:
+                        user_dest = User.objects.get(id=destinataire_user_id, actif=True)
+                    except User.DoesNotExist:
+                        return Response({"error": "Utilisateur non trouvé"}, status=404)
+                
+                # Mettre à jour le courrier
+                ancien_service = courrier.service_actuel
+                ancien_responsable = courrier.responsable_actuel
+                
+                courrier.service_actuel = service_dest or courrier.service_actuel
+                courrier.service_impute = service_dest or courrier.service_impute
+                courrier.responsable_actuel = user_dest
+                courrier.statut = 'traitement'
+                courrier.traitement_statut = 'prise_en_charge'
+                courrier.save()
+                
+                # Créer une étape de transmission
+                TraitementEtape.objects.create(
+                    courrier=courrier,
+                    type_etape='transfert',
+                    agent=user,
+                    description=f"Transmission vers {service_dest.nom if service_dest else user_dest.get_full_name()}",
+                    commentaire=commentaire,
+                    statut='termine',
+                    date_fin=timezone.now()
+                )
+                
+                # Journaliser
+                ActionHistorique.objects.create(
+                    courrier=courrier,
+                    user=user,
+                    action="TRANSMISSION_INTERNE",
+                    commentaire=f"Transmis vers {service_dest.nom if service_dest else user_dest.get_full_name()} - {commentaire}"
+                )
+                
+                serializer = CourrierDetailSerializer(courrier, context={'request': request})
+                
+                return Response({
+                    "success": True,
+                    "message": "Courrier transmis avec succès",
+                    "courrier": serializer.data
+                })
+                
+        except Exception as e:
+            logger.error(f"Erreur transmission: {str(e)}")
+            return Response({"error": str(e)}, status=500)
+
+
+    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
+    def viser_courrier(self, request, pk=None):
+        """
+        Visa d'un courrier interne (première validation)
+        """
+        try:
+            courrier = self.get_object()
+            user = request.user
+            commentaire = request.data.get('commentaire', '')
+            action = request.data.get('action', 'viser')  # viser, rejeter
+            
+            if action == 'viser':
+                courrier.niveau_validation_atteint = max(courrier.niveau_validation_atteint, 1)
+                courrier.traitement_statut = 'validation'  # Passe à l'étape suivante
+                message_success = "Visa apposé avec succès"
+            else:
+                courrier.traitement_statut = 'redaction'  # Retour à la rédaction
+                message_success = "Visa rejeté"
+            
+            courrier.save()
+            
+            # Créer une validation
+            ValidationCourrier.objects.create(
+                courrier=courrier,
+                type_validation='hierarchique',
+                validateur=user,
+                statut='valide' if action == 'viser' else 'rejete',
+                commentaire=commentaire,
+                date_action=timezone.now()
+            )
+            
+            ActionHistorique.objects.create(
+                courrier=courrier,
+                user=user,
+                action=f"VISA_{'APPROUVE' if action == 'viser' else 'REJETE'}",
+                commentaire=commentaire
+            )
+            
+            return Response({
+                "success": True,
+                "message": message_success
+            })
+            
+        except Exception as e:
+            logger.error(f"Erreur visa: {str(e)}")
+            return Response({"error": str(e)}, status=500)
+
+
+    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
+    def valider_interne(self, request, pk=None):
+        """
+        Validation hiérarchique finale
+        """
+        try:
+            courrier = self.get_object()
+            user = request.user
+            commentaire = request.data.get('commentaire', '')
+            action = request.data.get('action', 'valider')
+            
+            if action == 'valider':
+                courrier.niveau_validation_atteint = 2
+                courrier.traitement_statut = 'signature'
+                courrier.statut = 'repondu'
+                message_success = "Courrier validé avec succès"
+            else:
+                courrier.traitement_statut = 'redaction'
+                message_success = "Validation rejetée"
+            
+            courrier.save()
+            
+            ValidationCourrier.objects.create(
+                courrier=courrier,
+                type_validation='hierarchique',
+                validateur=user,
+                statut='valide' if action == 'valider' else 'rejete',
+                commentaire=commentaire,
+                date_action=timezone.now()
+            )
+            
+            ActionHistorique.objects.create(
+                courrier=courrier,
+                user=user,
+                action=f"VALIDATION_{'APPROUVEE' if action == 'valider' else 'REJETEE'}",
+                commentaire=commentaire
+            )
+            
+            return Response({
+                "success": True,
+                "message": message_success
+            })
+            
+        except Exception as e:
+            logger.error(f"Erreur validation: {str(e)}")
+            return Response({"error": str(e)}, status=500)
+
+
+    @action(detail=True, methods=['get'], permission_classes=[IsAuthenticated])
+    def services_destinataires(self, request, pk=None):
+        """
+        Liste des services disponibles pour transmission
+        """
+        try:
+            courrier = self.get_object()
+            user = request.user
+            
+            # Tous les services sauf le service actuel
+            services = Service.objects.exclude(id=courrier.service_actuel.id).values(
+                'id', 'nom', 'description'
+            ).order_by('nom')
+            
+            # Ajouter le nombre de membres
+            resultats = []
+            for s in services:
+                membres_count = User.objects.filter(service_id=s['id'], actif=True).count()
+                resultats.append({
+                    **s,
+                    'membres_count': membres_count
+                })
+            
+            return Response(resultats)
+            
+        except Exception as e:
+            logger.error(f"Erreur services_destinataires: {str(e)}")
+            return Response({"error": str(e)}, status=500)
+
+
+    @action(detail=True, methods=['get'], permission_classes=[IsAuthenticated])
+    def membres_service(self, request, pk=None):
+        """
+        Liste des membres d'un service pour transmission directe
+        """
+        try:
+            service_id = request.query_params.get('service_id')
+            if not service_id:
+                return Response({"error": "service_id requis"}, status=400)
+            
+            membres = User.objects.filter(
+                service_id=service_id,
+                actif=True
+            ).values(
+                'id', 'prenom', 'nom', 'email', 'role'
+            ).order_by('prenom', 'nom')
+            
+            for m in membres:
+                m['full_name'] = f"{m['prenom']} {m['nom']}".strip()
+                m['role_label'] = self._get_role_label(m['role'])
+            
+            return Response(membres)
+            
+        except Exception as e:
+            logger.error(f"Erreur membres_service: {str(e)}")
+            return Response({"error": str(e)}, status=500)
+
 
 class ImputationViewSet(viewsets.ModelViewSet):
     queryset = Imputation.objects.all().order_by('-date_imputation')
     serializer_class = ImputationSerializer
     permission_classes = [IsAuthenticated, IsChefOfService]
-
 
 class PieceJointeViewSet(viewsets.ModelViewSet):
     queryset = PieceJointe.objects.all().order_by('-uploaded_at')
@@ -1097,7 +1882,6 @@ class ModeleCourrierViewSet(viewsets.ModelViewSet):
             "pied_page": modele.pied_page,
             "modele": modele.nom
         })
-
 
 class ImputationDashboardViewSet(viewsets.ViewSet):
     permission_classes = [IsAuthenticated, IsChefOfService]

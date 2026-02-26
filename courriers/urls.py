@@ -64,4 +64,46 @@ urlpatterns = [
     path('courriers/<int:pk>/envoyer/', 
          CourrierViewSet.as_view({'post': 'envoyer'}), 
          name='courrier-envoyer'),
-]
+    # Dans courriers/urls.py
+
+    # Gestion des courriers entrants pour les chefs
+    path('courriers/<int:pk>/membres-service/', 
+         CourrierViewSet.as_view({'get': 'membres_service'}), 
+         name='courrier-membres-service'),
+    path('courriers/<int:pk>/affecter-membre/', 
+         CourrierViewSet.as_view({'post': 'affecter_membre'}), 
+         name='courrier-affecter-membre'),
+    path('courriers/<int:pk>/traiter-courrier/', 
+         CourrierViewSet.as_view({'post': 'traiter_courrier'}), 
+         name='courrier-traiter-courrier'),
+    
+    # Pour les agents/collaborateurs
+    path('courriers/mes-courriers-a-traiter/', 
+         CourrierViewSet.as_view({'get': 'mes_courriers_a_traiter'}), 
+         name='mes-courriers-a-traiter'),
+
+    path('courriers/<int:pk>/destinataires-disponibles/', 
+     CourrierViewSet.as_view({'get': 'destinataires_disponibles'}), 
+     name='courrier-destinataires-disponibles'),
+    path('courriers/<int:pk>/envoyer-a/', 
+        CourrierViewSet.as_view({'post': 'envoyer_a'}), 
+        name='courrier-envoyer-a'),
+
+    
+     # Courriers internes
+    path('courriers/<int:pk>/transmettre-interne/', 
+         CourrierViewSet.as_view({'post': 'transmettre_interne'}), 
+         name='courrier-transmettre-interne'),
+    path('courriers/<int:pk>/viser-courrier/', 
+         CourrierViewSet.as_view({'post': 'viser_courrier'}), 
+         name='courrier-viser-courrier'),
+    path('courriers/<int:pk>/valider-interne/', 
+         CourrierViewSet.as_view({'post': 'valider_interne'}), 
+         name='courrier-valider-interne'),
+    path('courriers/<int:pk>/services-destinataires/', 
+         CourrierViewSet.as_view({'get': 'services_destinataires'}), 
+         name='courrier-services-destinataires'),
+    path('courriers/<int:pk>/membres-service/', 
+         CourrierViewSet.as_view({'get': 'membres_service'}), 
+         name='courrier-membres-service'),
+]  
