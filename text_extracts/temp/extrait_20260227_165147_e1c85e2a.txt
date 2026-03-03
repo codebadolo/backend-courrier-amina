@@ -1,0 +1,44 @@
+================================================================================
+EXTRACTION DE TEXTE OCR - SYSTÈME DE GESTION DE COURRIER
+================================================================================
+Fichier : extrait_20260227_165147_e1c85e2a.txt
+Date de création : 2026-02-27 16:51:47
+Généré automatiquement par le système
+--------------------------------------------------------------------------------
+
+[MÉTADONNÉES DU COURRIER]
+----------------------------------------
+SOURCE_FILE: Courrier2.pdf
+FILE_SIZE: 130269
+OCR_DATE: 2026-02-27T16:51:47.048744
+OCR_ENGINE: Tesseract
+LANGUAGE: fra+eng
+
+================================================================================
+[CONTENU EXTRIT PAR OCR]
+================================================================================
+
+d
+@
+Arte N° 2020 - 438 / MERSI / SG / DGE Sup
+. t Ouagadougou, le 18 Janvier 2025
+Monsieur le directeur Général de
+ZEP Intel
+Nos Réf, : 05'180225/DG/UA
+Objet : demande de stage Monsieur le directeur Général,
+Dans le cadre de nos programmes de formation en licence. les étudiants de la troisième année de
+l'Université de Unite Africaine (UA) doivent soutenir un rapport pour lebtention de leur | diplome, La soutenance se fait à l'issue d'un stage pratique de deux mois au minimum. Le stage est prévu au second semestre entre le 1% mai et le 31 juillet 2025.
+Ce stage leur permettra de mettre en pratique les enseignements reçus et de mieux connaître le miliew professionnel.
+Nous sollicitons deux (02) postes de stage d'une durée de deux mois pour des étudiants en troisième année de Licence option Informatique de Gestion a partir du mois de mai 2025. Ci-jointe à la présenic la liste des etudiants concernés. Dans l'espoir qu'une suite favorable sera réservée à notre requête. nous vous prions de recevoir, Monsieur le directeur Général, nos remerciements anticipés.
+Tel : +226 03 03 65 65 / 03 03 63 63 /
+Mail : ddiallo@iamburkina.com / akonate@iamburkina.com [gps AN
+excaeay 4
+BENG? TAGS: —— ‘Ss
+ms RCCM BF OUA 2007 B2643 * IFU N° : 00012930 U DME centre H * Cpte IB BANK N°000171900101-03 * CORIS BANK N°0350733224101 - 02
+CamScanner“â
+
+================================================================================
+FIN DU DOCUMENT
+Longueur : 1340 caractères
+Lignes : 18
+================================================================================

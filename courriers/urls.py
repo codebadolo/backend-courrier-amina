@@ -6,7 +6,7 @@ from .views import (
     PieceJointeViewSet, ModeleCourrierViewSet,
     ImputationDashboardViewSet, CourrierDownloadTextView,
     AgentServiceDashboardViewSet, CourrierAnalyzeAIView,
-    CourrierTraitementViewSet, GenererPDFView,
+    CourrierTraitementViewSet, GenererPDFView, gemini_ocr
 )
 
 router = DefaultRouter()
@@ -19,6 +19,7 @@ router.register(r"agent-dashboard", AgentServiceDashboardViewSet, basename='agen
 router.register(r"traitement", CourrierTraitementViewSet, basename="traitement")  # ← UNIQUE
 
 urlpatterns = [
+    path('ocr-gemini/', gemini_ocr, name='courrier-ocr-gemini'),
     path('', include(router.urls)),
     # Vues spéciales hors ViewSet
     path('courriers/analyze_complete/', CourrierViewSet.as_view({'post': 'analyze_complete'}), name='analyze-complete'),
@@ -106,4 +107,7 @@ urlpatterns = [
     path('courriers/<int:pk>/membres-service/', 
          CourrierViewSet.as_view({'get': 'membres_service'}), 
          name='courrier-membres-service'),
+     
+     # path('ocr-gemini/', gemini_ocr, name='courrier-ocr-gemini')
+
 ]  

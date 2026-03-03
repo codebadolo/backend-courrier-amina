@@ -12,6 +12,11 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 from pathlib import Path
 
+from dotenv import load_dotenv
+load_dotenv()  # charge les variables du fichier .env
+import os
+GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -21,6 +26,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'django-insecure-9qz%^vap8h8brwxi7n@(b4fd*!0x9ub_rg(m_7nz10**2%3!0+'
+
+
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -59,7 +66,7 @@ MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
+    # 'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
@@ -217,9 +224,6 @@ CSRF_TRUSTED_ORIGINS.extend([
     "http://127.0.0.1:3000/api",
 ])
 
-import os
-# Configuration Gemini
-GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY', 'AIzaSyCIVBo9vsIau0rhipFOdIHm4MpVxxpvPT8')
 
 
 LOGGING = {
@@ -247,10 +251,7 @@ LOGGING = {
     },
 }
 
-import os
 
-
-# settings.py
 
 # Configuration email
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
@@ -260,3 +261,8 @@ EMAIL_USE_TLS = True
 EMAIL_HOST_USER = 'aminakonate2002@gmail.com'
 EMAIL_HOST_PASSWORD = 'aminapass'
 DEFAULT_FROM_EMAIL = 'ZEPINTEL <contact@zepintel.com>'
+
+
+# import os
+# GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
+print("GEMINI_API_KEY:", GEMINI_API_KEY)

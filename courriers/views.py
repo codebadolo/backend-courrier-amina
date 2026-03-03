@@ -12,6 +12,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from dateutil import parser
 from django.http import HttpResponse, FileResponse, Http404 
 from .utils.pdf_utils import fusionner_avec_entete
+from rest_framework.decorators import api_view, permission_classes
 
 import io
 import tempfile
@@ -51,6 +52,10 @@ import pandas as pd
 import json
 from datetime import datetime, timedelta
 from rest_framework.decorators import api_view
+# courriers/views.py
+from workflow.services.gemini_courrier_service import gemini_courrier_service
+from workflow.services.gemini_ocr import GeminiOCR
+
 
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import A4
@@ -201,13 +206,20 @@ class CourrierViewSet(viewsets.ModelViewSet):
                 **courrier_data
             )
             
-            texte_ocr_global = self._process_pieces_jointes(
-                request.FILES.getlist('pieces_jointes', []),
-                courrier,
-                request.user,
-                ocr_enabled
-            )
-            
+            if ocr_enabled:
+                from workflow.services.gemini_ocr import GeminiOCR
+                gemini = GeminiOCR()
+                texte_ocr_global = ""
+                for fichier in request.FILES.getlist('pieces_jointes', []):
+                    try:
+                        fichier_bytes = fichier.read()
+                        mime_type = fichier.content_type
+                        texte = gemini.extraire_texte(fichier_bytes, mime_type, fichier.name)
+                        if texte:
+                            texte_ocr_global += f"\n--- {fichier.name} ---\n{texte}\n"
+                    except Exception as e:
+                        logger.error(f"Erreur Gemini OCR pour {fichier.name}: {str(e)}")
+
             if texte_ocr_global:
                 courrier.contenu_texte = texte_ocr_global
                 courrier.save(update_fields=['contenu_texte'])
@@ -1956,20 +1968,29 @@ class ImputationDashboardViewSet(viewsets.ViewSet):
             logger.error(f"Erreur statistiques imputation: {e}")
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-
 class CourrierAnalyzeAIView(APIView):
     """Vue pour l'analyse IA avec création de fichier texte"""
+    
     def post(self, request):
         try:
             file_obj = request.FILES.get('pieces_jointes')
             if not file_obj:
                 return Response({"error": "Aucun fichier fourni"}, status=status.HTTP_400_BAD_REQUEST)
+            
             temp_path = self._save_temp_file(file_obj)
+            
             try:
+                # 1. Extraire le texte avec OCR
                 from workflow.services.ocr import process_ocr
                 extracted_text = process_ocr(temp_path, None)
+                
                 if not extracted_text or not extracted_text.strip():
-                    return Response({"error": "Impossible d'extraire le texte du document"}, status=status.HTTP_400_BAD_REQUEST)
+                    return Response(
+                        {"error": "Impossible d'extraire le texte du document"}, 
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+                
+                # 2. Sauvegarder le texte extrait
                 from workflow.services.file_storage import text_storage
                 metadata = {
                     "source_file": file_obj.name,
@@ -1978,44 +1999,85 @@ class CourrierAnalyzeAIView(APIView):
                     "ocr_engine": "Tesseract",
                     "language": "fra+eng"
                 }
+                
                 if request.data:
                     for field in ['objet', 'expediteur_nom', 'expediteur_email', 'date_reception']:
                         if field in request.data:
                             metadata[field] = request.data[field]
-                file_info = text_storage.save_extracted_text(text=extracted_text, metadata=metadata)
+                
+                file_info = text_storage.save_extracted_text(
+                    text=extracted_text, 
+                    metadata=metadata
+                )
+                
+                # 3. Extraire les informations structurées (fallback)
                 from workflow.services.extracteur_ocr import extracteur_ocr
                 structured_info = extracteur_ocr.extraire_toutes_informations(extracted_text)
-                classification = self._classify_with_ai(extracted_text)
-                priorite = self._determine_priority(extracted_text)
+                
+                # 4. Utiliser GEMINI pour l'analyse complète
+                # Créer un objet courrier temporaire
+                class TempCourrier:
+                    def __init__(self, texte, metadata):
+                        self.contenu_texte = texte
+                        self.objet = metadata.get('objet', '')
+                        self.expediteur_nom = metadata.get('expediteur_nom', '')
+                        self.expediteur_email = metadata.get('expediteur_email', '')
+                        self.expediteur_telephone = metadata.get('expediteur_telephone', '')
+                        self.expediteur_adresse = metadata.get('expediteur_adresse', '')
+                        self.date_reception = metadata.get('date_reception', None)
+                
+                temp_courrier = TempCourrier(extracted_text, metadata)
+                
+                # Appeler Gemini
+                gemini_result = gemini_courrier_service.analyser_courrier(temp_courrier)
+                
+                # 5. Fusionner les résultats
                 response_data = {
                     "texte_ocr": extracted_text,
-                    "classification": classification,
-                    "priorite": priorite,
+                    "classification": gemini_result.get('classification', {
+                        "categorie_suggeree": structured_info.get('objet', 'ADMINISTRATIF'),
+                        "service_suggere": "Secrétariat Général",
+                        "confiance_categorie": 0.3,
+                        "confiance_service": 0.3
+                    }),
+                    "priorite": gemini_result.get('priorite', {
+                        "niveau": "normale",
+                        "confiance": 0.5,
+                        "raison": "Analyse standard"
+                    }),
                     "analyse": {
-                        "resume": self._generate_summary(extracted_text),
+                        "resume": gemini_result.get('analyse', {}).get('resume', extracted_text[:200] + "..."),
                         "mots_cles": structured_info.get("mots_cles", [])
                     },
                     "expediteur": structured_info.get("expediteur", {}),
                     "structured_info": structured_info,
                     "fichiers_traites": [file_obj.name],
                     "ia_disponible": True,
+                    "ia_source": "gemini",
                     "objet": structured_info.get("objet", ""),
-                    "confidentialite_suggestion": "normale",
+                    "confidentialite_suggestion": gemini_result.get('confidentialite_suggestion', "normale"),
                     "text_file_created": file_info is not None,
                     "text_file_info": file_info
                 }
+                
                 if os.path.exists(temp_path):
                     os.remove(temp_path)
-                logger.info(f"Analyse IA terminée - Fichier texte créé: {file_info}")
+                
+                logger.info(f"Analyse Gemini terminée - Fichier texte créé: {file_info}")
                 return Response(response_data, status=status.HTTP_200_OK)
+                
             except Exception as e:
                 if os.path.exists(temp_path):
                     os.remove(temp_path)
                 logger.error(f"Erreur traitement: {str(e)}")
                 raise
+                
         except Exception as e:
             logger.error(f"Erreur analyse IA: {str(e)}")
-            return Response({"error": f"Erreur lors de l'analyse: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response(
+                {"error": f"Erreur lors de l'analyse: {str(e)}"}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
     
     def _save_temp_file(self, file_obj):
         import tempfile
@@ -2027,23 +2089,6 @@ class CourrierAnalyzeAIView(APIView):
                 f.write(chunk)
         return temp_path
     
-    def _classify_with_ai(self, extracted_text):
-        return {
-            "categorie_suggeree": "ADMINISTRATIF",
-            "service_suggere": "Secrétariat Général",
-            "confiance_categorie": 0.3,
-            "confiance_service": 0.3
-        }
-    
-    def _determine_priority(self, extracted_text):
-        return {"niveau": "basse", "confiance": 0.5, "raison": "Document non prioritaire"}
-    
-    def _generate_summary(self, extracted_text):
-        if len(extracted_text) > 200:
-            return extracted_text[:200] + "..."
-        return extracted_text
-
-
 class CourrierDownloadTextView(APIView):
     def get(self, request, pk):
         try:
@@ -3172,3 +3217,27 @@ class GenererPDFView(APIView):
                 {"error": f"Erreur lors de la génération du PDF: {str(e)}"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+
+from workflow.services.gemini_ocr import GeminiOCR
+import logging
+
+logger = logging.getLogger(__name__)
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def gemini_ocr(request):
+    file_obj = request.FILES.get('fichier')
+    if not file_obj:
+        return Response({"error": "Aucun fichier fourni"}, status=400)
+
+    fichier_bytes = file_obj.read()
+    mime_type = file_obj.content_type
+    nom_fichier = file_obj.name
+
+    try:
+        ocr = GeminiOCR()
+        texte = ocr.extraire_texte(fichier_bytes, mime_type, nom_fichier)
+        return Response({"texte": texte})
+    except Exception as e:
+        logger.error(f"Erreur Gemini OCR: {e}")
+        return Response({"error": str(e)}, status=500)

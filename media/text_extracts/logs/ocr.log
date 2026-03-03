@@ -993,3 +993,854 @@ NameError: name 'texte_ocr' is not defined
 2026-02-26 16:10:51,421 [INFO] workflow.services.classifier: Classification: ADMINISTRATIF (0.30), Priorité: BASSE, Objet: Document administratif...
 2026-02-26 16:12:55,151 [INFO] workflow.services.classifier: Classification: ADMINISTRATIF (0.30), Priorité: BASSE, Objet: Lorsque le chef de courriers reçoit le courrier, i...
 2026-02-26 16:15:54,697 [INFO] workflow.services.classifier: Classification: ADMINISTRATIF (0.30), Priorité: BASSE, Objet: Lorsque le chef de courriers reçoit le courrier, i...
+2026-02-27 10:09:13,168 [INFO] workflow.services.ocr: Début de l'OCR sur: C:\Users\LASOUR~1\AppData\Local\Temp\Courrier1.pdf
+2026-02-27 10:09:13,169 [INFO] workflow.services.ocr: Tentative d'extraction texte natif PDF...
+2026-02-27 10:09:13,182 [INFO] workflow.services.ocr: Début de l'OCR PDF (document scanné)...
+2026-02-27 10:09:15,478 [INFO] workflow.services.ocr: PDF converti en 1 images
+2026-02-27 10:09:15,478 [INFO] workflow.services.ocr: Traitement OCR page 1/1
+2026-02-27 10:09:22,510 [INFO] workflow.services.ocr: OCR terminé: 1145 caractères extraits
+2026-02-27 10:10:00,226 [INFO] workflow.services.ocr: Début de l'OCR sur: C:\MesProjets\gestion_courrier\backend-courrier-amina\courriers\pieces\Courrier1_HMbwhYz.pdf
+2026-02-27 10:10:00,226 [INFO] workflow.services.ocr: Tentative d'extraction texte natif PDF...
+2026-02-27 10:10:00,255 [INFO] workflow.services.ocr: Début de l'OCR PDF (document scanné)...
+2026-02-27 10:10:01,397 [INFO] workflow.services.ocr: PDF converti en 1 images
+2026-02-27 10:10:01,405 [INFO] workflow.services.ocr: Traitement OCR page 1/1
+2026-02-27 10:10:06,359 [INFO] workflow.services.ocr: OCR terminé: 1145 caractères extraits
+2026-02-27 10:10:06,369 [INFO] workflow.services.classifier: Classification: ADMINISTRATIF (0.30), Priorité: BASSE, Objet: Proposition de formation Monsieur le directeur Gén...
+2026-02-27 10:15:19,446 [INFO] workflow.services.ocr: Début de l'OCR sur: C:\Users\LASOUR~1\AppData\Local\Temp\Courrier2.pdf
+2026-02-27 10:15:19,446 [INFO] workflow.services.ocr: Tentative d'extraction texte natif PDF...
+2026-02-27 10:15:19,462 [INFO] workflow.services.ocr: Début de l'OCR PDF (document scanné)...
+2026-02-27 10:15:22,046 [INFO] workflow.services.ocr: PDF converti en 1 images
+2026-02-27 10:15:22,046 [INFO] workflow.services.ocr: Traitement OCR page 1/1
+2026-02-27 10:15:28,574 [INFO] workflow.services.ocr: OCR terminé: 1340 caractères extraits
+2026-02-27 10:16:05,901 [INFO] workflow.services.ocr: Début de l'OCR sur: C:\MesProjets\gestion_courrier\backend-courrier-amina\courriers\pieces\Courrier2_8HNpH47.pdf
+2026-02-27 10:16:05,901 [INFO] workflow.services.ocr: Tentative d'extraction texte natif PDF...
+2026-02-27 10:16:05,934 [INFO] workflow.services.ocr: Début de l'OCR PDF (document scanné)...
+2026-02-27 10:16:08,568 [INFO] workflow.services.ocr: PDF converti en 1 images
+2026-02-27 10:16:08,568 [INFO] workflow.services.ocr: Traitement OCR page 1/1
+2026-02-27 10:16:15,516 [INFO] workflow.services.ocr: OCR terminé: 1340 caractères extraits
+2026-02-27 10:16:15,516 [INFO] workflow.services.classifier: Classification: ADMINISTRATIF (0.30), Priorité: BASSE, Objet: demande de stage Monsieur le directeur Général,...
+2026-02-27 11:27:37,710 [INFO] workflow.services.ocr: Début de l'OCR sur: C:\MesProjets\gestion_courrier\backend-courrier-amina\courriers\pieces\Courrier2_XMdtoNN.pdf
+2026-02-27 11:27:37,710 [INFO] workflow.services.ocr: Tentative d'extraction texte natif PDF...
+2026-02-27 11:27:37,726 [INFO] workflow.services.ocr: Début de l'OCR PDF (document scanné)...
+2026-02-27 11:27:40,451 [INFO] workflow.services.ocr: PDF converti en 1 images
+2026-02-27 11:27:40,451 [INFO] workflow.services.ocr: Traitement OCR page 1/1
+2026-02-27 11:27:46,831 [INFO] workflow.services.ocr: OCR terminé: 1340 caractères extraits
+2026-02-27 11:27:46,849 [INFO] workflow.services.classifier: Classification: ADMINISTRATIF (0.30), Priorité: BASSE, Objet: demande de stage Monsieur le directeur Général,...
+2026-02-27 12:14:22,044 [INFO] workflow.services.ocr: Début de l'OCR sur: C:\Users\LASOUR~1\AppData\Local\Temp\Courrier2.pdf
+2026-02-27 12:14:22,044 [INFO] workflow.services.ocr: Tentative d'extraction texte natif PDF...
+2026-02-27 12:14:22,071 [INFO] workflow.services.ocr: Début de l'OCR PDF (document scanné)...
+2026-02-27 12:14:24,717 [INFO] workflow.services.ocr: PDF converti en 1 images
+2026-02-27 12:14:24,717 [INFO] workflow.services.ocr: Traitement OCR page 1/1
+2026-02-27 12:14:31,068 [INFO] workflow.services.ocr: OCR terminé: 1340 caractères extraits
+2026-02-27 14:25:50,223 [INFO] workflow.services.ocr: Début de l'OCR sur: C:\Users\LASOUR~1\AppData\Local\Temp\Courrier2.pdf
+2026-02-27 14:25:50,223 [INFO] workflow.services.ocr: Tentative d'extraction texte natif PDF...
+2026-02-27 14:25:50,241 [INFO] workflow.services.ocr: Début de l'OCR PDF (document scanné)...
+2026-02-27 14:25:51,787 [INFO] workflow.services.ocr: PDF converti en 1 images
+2026-02-27 14:25:51,787 [INFO] workflow.services.ocr: Traitement OCR page 1/1
+2026-02-27 14:25:55,270 [INFO] workflow.services.ocr: OCR terminé: 1340 caractères extraits
+2026-02-27 14:53:14,860 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-02-27 14:53:51,078 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-02-27 14:54:07,267 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-02-27 14:54:23,497 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-02-27 14:54:43,275 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-02-27 14:55:40,630 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-02-27 14:55:40,720 [INFO] workflow.services.gemini_courrier_service: Appel à Gemini avec prompt de 2723 caractères
+2026-02-27 14:55:42,423 [WARNING] workflow.services.gemini_base: Erreur avec modèle gemini-2.0-flash-exp: Modèle gemini-2.0-flash-exp non disponible
+2026-02-27 14:55:43,600 [WARNING] workflow.services.gemini_base: Erreur avec modèle gemini-2.5-flash-exp: Modèle gemini-2.5-flash-exp non disponible
+2026-02-27 14:55:44,927 [WARNING] workflow.services.gemini_base: Erreur avec modèle gemini-pro: Modèle gemini-pro non disponible
+2026-02-27 14:55:44,943 [ERROR] workflow.services.gemini_courrier_service: Erreur Gemini: Tous les modèles Gemini ont échoué
+2026-02-27 14:55:44,943 [INFO] workflow.services.gemini_courrier_service: Utilisation de l'analyse de fallback
+2026-02-27 14:55:44,958 [INFO] workflow.services.classifier: Classification: ADMINISTRATIF (0.30), Priorité: BASSE, Objet: This half time serious start theory contain. Life ...
+2026-02-27 15:00:07,297 [INFO] workflow.services.gemini_courrier_service: Appel à Gemini avec prompt de 2723 caractères
+2026-02-27 15:00:08,647 [WARNING] workflow.services.gemini_base: Erreur avec modèle gemini-2.0-flash-exp: Modèle gemini-2.0-flash-exp non disponible
+2026-02-27 15:00:09,840 [WARNING] workflow.services.gemini_base: Erreur avec modèle gemini-2.5-flash-exp: Modèle gemini-2.5-flash-exp non disponible
+2026-02-27 15:00:11,114 [WARNING] workflow.services.gemini_base: Erreur avec modèle gemini-pro: Modèle gemini-pro non disponible
+2026-02-27 15:00:11,114 [ERROR] workflow.services.gemini_courrier_service: Erreur Gemini: Tous les modèles Gemini ont échoué
+2026-02-27 15:00:11,114 [INFO] workflow.services.gemini_courrier_service: Utilisation de l'analyse de fallback
+2026-02-27 15:00:11,114 [INFO] workflow.services.classifier: Classification: ADMINISTRATIF (0.30), Priorité: BASSE, Objet: This half time serious start theory contain. Life ...
+2026-02-27 15:03:57,242 [WARNING] workflow.services.gemini_base: Erreur avec modèle gemini-2.0-flash-exp: Modèle gemini-2.0-flash-exp non disponible
+2026-02-27 15:03:58,401 [WARNING] workflow.services.gemini_base: Erreur avec modèle gemini-2.5-flash-exp: Modèle gemini-2.5-flash-exp non disponible
+2026-02-27 15:03:59,680 [WARNING] workflow.services.gemini_base: Erreur avec modèle gemini-pro: Modèle gemini-pro non disponible
+2026-02-27 15:10:50,023 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-02-27 15:11:01,323 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-02-27 15:14:17,151 [WARNING] workflow.services.gemini_base: Erreur avec modèle gemini-2.0-flash-exp: Modèle gemini-2.0-flash-exp non disponible
+2026-02-27 15:14:18,403 [WARNING] workflow.services.gemini_base: Erreur avec modèle gemini-2.5-flash-exp: Modèle gemini-2.5-flash-exp non disponible
+2026-02-27 15:14:19,713 [WARNING] workflow.services.gemini_base: Erreur avec modèle gemini-pro: Modèle gemini-pro non disponible
+2026-02-27 15:16:17,888 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-02-27 15:16:29,362 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-02-27 15:17:31,783 [WARNING] workflow.services.gemini_base: Erreur avec modèle gemini-2.0-flash-exp: Modèle gemini-2.0-flash-exp non disponible
+2026-02-27 15:17:33,179 [WARNING] workflow.services.gemini_base: Erreur avec modèle gemini-2.5-flash-exp: Modèle gemini-2.5-flash-exp non disponible
+2026-02-27 15:17:34,546 [WARNING] workflow.services.gemini_base: Erreur avec modèle gemini-pro: Modèle gemini-pro non disponible
+2026-02-27 16:23:49,719 [WARNING] workflow.services.gemini_base: Erreur avec modèle gemini-2.0-flash-exp: Modèle gemini-2.0-flash-exp non disponible
+2026-02-27 16:23:50,899 [WARNING] workflow.services.gemini_base: Erreur avec modèle gemini-2.5-flash-exp: Modèle gemini-2.5-flash-exp non disponible
+2026-02-27 16:23:52,080 [WARNING] workflow.services.gemini_base: Erreur avec modèle gemini-pro: Modèle gemini-pro non disponible
+2026-02-27 16:29:44,263 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-02-27 16:51:38,103 [INFO] workflow.services.ocr: Début de l'OCR sur: C:\Users\LASOUR~1\AppData\Local\Temp\Courrier2.pdf
+2026-02-27 16:51:38,104 [INFO] workflow.services.ocr: Tentative d'extraction texte natif PDF...
+2026-02-27 16:51:38,132 [INFO] workflow.services.ocr: Début de l'OCR PDF (document scanné)...
+2026-02-27 16:51:40,615 [INFO] workflow.services.ocr: PDF converti en 1 images
+2026-02-27 16:51:40,616 [INFO] workflow.services.ocr: Traitement OCR page 1/1
+2026-02-27 16:51:47,043 [INFO] workflow.services.ocr: OCR terminé: 1340 caractères extraits
+2026-02-27 16:51:47,163 [INFO] workflow.services.gemini_courrier_service: Appel à Gemini avec prompt de 3873 caractères
+2026-02-27 16:51:49,542 [WARNING] workflow.services.gemini_base: Erreur avec modèle gemini-2.0-flash-exp: Modèle gemini-2.0-flash-exp non disponible
+2026-02-27 16:51:51,485 [WARNING] workflow.services.gemini_base: Erreur avec modèle gemini-2.5-flash-exp: Modèle gemini-2.5-flash-exp non disponible
+2026-02-27 16:51:53,500 [WARNING] workflow.services.gemini_base: Erreur avec modèle gemini-pro: Modèle gemini-pro non disponible
+2026-02-27 16:51:53,503 [ERROR] workflow.services.gemini_courrier_service: Erreur Gemini: Tous les modèles Gemini ont échoué
+2026-02-27 16:51:53,503 [INFO] workflow.services.gemini_courrier_service: Utilisation de l'analyse de fallback
+2026-02-27 16:51:53,509 [INFO] workflow.services.classifier: Classification: ADMINISTRATIF (0.30), Priorité: BASSE, Objet: demande de stage Monsieur le directeur Général,...
+2026-02-27 16:52:10,065 [INFO] workflow.services.ocr: Début de l'OCR sur: C:\MesProjets\gestion_courrier\backend-courrier-amina\courriers\pieces\Courrier2_rvcpCaX.pdf
+2026-02-27 16:52:10,065 [INFO] workflow.services.ocr: Tentative d'extraction texte natif PDF...
+2026-02-27 16:52:10,106 [INFO] workflow.services.ocr: Début de l'OCR PDF (document scanné)...
+2026-02-27 16:52:13,082 [INFO] workflow.services.ocr: PDF converti en 1 images
+2026-02-27 16:52:13,082 [INFO] workflow.services.ocr: Traitement OCR page 1/1
+2026-02-27 16:52:17,943 [INFO] workflow.services.ocr: OCR terminé: 1340 caractères extraits
+2026-02-27 16:52:17,979 [INFO] workflow.services.classifier: Classification: ADMINISTRATIF (0.30), Priorité: BASSE, Objet: demande de stage Monsieur le directeur Général,...
+2026-02-27 16:53:14,221 [INFO] workflow.services.ocr: Début de l'OCR sur: C:\Users\LASOUR~1\AppData\Local\Temp\Courrier1.pdf
+2026-02-27 16:53:14,221 [INFO] workflow.services.ocr: Tentative d'extraction texte natif PDF...
+2026-02-27 16:53:14,251 [INFO] workflow.services.ocr: Début de l'OCR PDF (document scanné)...
+2026-02-27 16:53:15,242 [INFO] workflow.services.ocr: PDF converti en 1 images
+2026-02-27 16:53:15,242 [INFO] workflow.services.ocr: Traitement OCR page 1/1
+2026-02-27 16:53:19,357 [INFO] workflow.services.ocr: OCR terminé: 1145 caractères extraits
+2026-02-27 16:53:19,495 [INFO] workflow.services.gemini_courrier_service: Appel à Gemini avec prompt de 3678 caractères
+2026-02-27 16:53:21,668 [WARNING] workflow.services.gemini_base: Erreur avec modèle gemini-2.0-flash-exp: Modèle gemini-2.0-flash-exp non disponible
+2026-02-27 16:53:23,599 [WARNING] workflow.services.gemini_base: Erreur avec modèle gemini-2.5-flash-exp: Modèle gemini-2.5-flash-exp non disponible
+2026-02-27 16:53:25,554 [WARNING] workflow.services.gemini_base: Erreur avec modèle gemini-pro: Modèle gemini-pro non disponible
+2026-02-27 16:53:25,562 [ERROR] workflow.services.gemini_courrier_service: Erreur Gemini: Tous les modèles Gemini ont échoué
+2026-02-27 16:53:25,562 [INFO] workflow.services.gemini_courrier_service: Utilisation de l'analyse de fallback
+2026-02-27 16:53:25,572 [INFO] workflow.services.classifier: Classification: ADMINISTRATIF (0.30), Priorité: BASSE, Objet: Proposition de formation Monsieur le directeur Gén...
+2026-02-27 16:53:36,769 [INFO] workflow.services.ocr: Début de l'OCR sur: C:\MesProjets\gestion_courrier\backend-courrier-amina\courriers\pieces\Courrier1_HqI4jdt.pdf
+2026-02-27 16:53:36,769 [INFO] workflow.services.ocr: Tentative d'extraction texte natif PDF...
+2026-02-27 16:53:36,791 [INFO] workflow.services.ocr: Début de l'OCR PDF (document scanné)...
+2026-02-27 16:53:37,941 [INFO] workflow.services.ocr: PDF converti en 1 images
+2026-02-27 16:53:37,941 [INFO] workflow.services.ocr: Traitement OCR page 1/1
+2026-02-27 16:53:42,061 [INFO] workflow.services.ocr: OCR terminé: 1145 caractères extraits
+2026-02-27 16:53:42,066 [INFO] workflow.services.classifier: Classification: ADMINISTRATIF (0.30), Priorité: BASSE, Objet: Proposition de formation Monsieur le directeur Gén...
+2026-02-27 17:15:49,550 [INFO] workflow.services.classifier: Classification: ADMINISTRATIF (0.30), Priorité: BASSE, Objet: Document administratif...
+2026-02-27 17:20:21,403 [INFO] workflow.services.classifier: Classification: ADMINISTRATIF (0.30), Priorité: BASSE, Objet: Document administratif...
+2026-03-02 02:33:10,101 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-02 03:34:51,321 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-02 09:02:34,879 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-02 11:08:10,815 [INFO] workflow.services.classifier: Classification: ADMINISTRATIF (0.30), Priorité: BASSE, Objet: Document administratif...
+2026-03-02 11:11:28,226 [INFO] workflow.services.classifier: Classification: ADMINISTRATIF (0.30), Priorité: BASSE, Objet: Document administratif...
+2026-03-02 11:11:50,129 [INFO] workflow.services.classifier: Classification: ADMINISTRATIF (0.30), Priorité: BASSE, Objet: Document administratif...
+2026-03-02 11:24:51,134 [INFO] workflow.services.classifier: Classification: ADMINISTRATIF (0.30), Priorité: BASSE, Objet: Document administratif...
+2026-03-02 11:52:22,961 [INFO] workflow.services.classifier: Classification: ADMINISTRATIF (0.30), Priorité: BASSE, Objet: Document administratif...
+2026-03-02 12:08:17,675 [INFO] workflow.services.classifier: Classification: ADMINISTRATIF (0.30), Priorité: BASSE, Objet: import React, { useState, useEffect } from "react"...
+2026-03-02 15:33:26,127 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-02 15:48:29,384 [INFO] workflow.services.classifier: Classification: ADMINISTRATIF (0.30), Priorité: BASSE, Objet: Document administratif...
+2026-03-02 15:54:21,006 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-02 15:55:04,009 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-02 16:12:04,486 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-02 16:15:29,039 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-02 17:13:13,389 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-02 17:28:50,798 [INFO] workflow.services.ocr: Début de l'OCR sur: C:\Users\LASOUR~1\AppData\Local\Temp\Courrier1.pdf
+2026-03-02 17:28:50,798 [INFO] workflow.services.ocr: Tentative d'extraction texte natif PDF...
+2026-03-02 17:28:50,816 [INFO] workflow.services.ocr: Début de l'OCR PDF (document scanné)...
+2026-03-02 17:28:53,727 [INFO] workflow.services.ocr: PDF converti en 1 images
+2026-03-02 17:28:53,727 [INFO] workflow.services.ocr: Traitement OCR page 1/1
+2026-03-02 17:28:57,921 [INFO] workflow.services.ocr: OCR terminé: 1145 caractères extraits
+2026-03-02 17:28:58,264 [INFO] workflow.services.gemini_courrier_service: Appel à Gemini avec prompt de 3678 caractères
+2026-03-02 17:28:59,772 [WARNING] workflow.services.gemini_base: Erreur avec modèle gemini-2.0-flash-exp: Modèle gemini-2.0-flash-exp non disponible
+2026-03-02 17:29:00,877 [WARNING] workflow.services.gemini_base: Erreur avec modèle gemini-2.5-flash-exp: Modèle gemini-2.5-flash-exp non disponible
+2026-03-02 17:29:01,967 [WARNING] workflow.services.gemini_base: Erreur avec modèle gemini-pro: Modèle gemini-pro non disponible
+2026-03-02 17:29:01,969 [ERROR] workflow.services.gemini_courrier_service: Erreur Gemini: Tous les modèles Gemini ont échoué
+2026-03-02 17:29:01,969 [INFO] workflow.services.gemini_courrier_service: Utilisation de l'analyse de fallback
+2026-03-02 17:29:01,973 [INFO] workflow.services.classifier: Classification: ADMINISTRATIF (0.30), Priorité: BASSE, Objet: Proposition de formation Monsieur le directeur Gén...
+2026-03-02 17:43:18,656 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-02 17:45:50,943 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-02 17:46:05,988 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-02 17:47:02,954 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-02 17:49:24,543 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-02 17:51:30,090 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-02 17:56:16,637 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-03 00:29:16,423 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-03 01:05:40,340 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-03 01:07:35,205 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-03 01:10:39,880 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-03 08:41:42,341 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-03 08:47:16,885 [ERROR] workflow.services.gemini_base: CLÉ API GEMINI NON CONFIGURÉE !
+2026-03-03 08:47:16,886 [ERROR] workflow.services.gemini_courrier_service: Erreur initialisation Gemini: La clé API Gemini n'est pas configurée.
+2026-03-03 08:53:51,015 [ERROR] workflow.services.gemini_base: CLÉ API GEMINI NON CONFIGURÉE !
+2026-03-03 08:53:51,015 [ERROR] workflow.services.gemini_courrier_service: Erreur initialisation Gemini: La clé API Gemini n'est pas configurée.
+2026-03-03 08:54:40,680 [ERROR] workflow.services.gemini_base: CLÉ API GEMINI NON CONFIGURÉE !
+2026-03-03 08:54:40,680 [ERROR] workflow.services.gemini_courrier_service: Erreur initialisation Gemini: La clé API Gemini n'est pas configurée.
+2026-03-03 08:55:26,788 [ERROR] workflow.services.gemini_base: CLÉ API GEMINI NON CONFIGURÉE !
+2026-03-03 08:55:26,788 [ERROR] workflow.services.gemini_courrier_service: Erreur initialisation Gemini: La clé API Gemini n'est pas configurée.
+2026-03-03 08:55:41,020 [ERROR] workflow.services.gemini_base: CLÉ API GEMINI NON CONFIGURÉE !
+2026-03-03 08:55:41,020 [ERROR] workflow.services.gemini_courrier_service: Erreur initialisation Gemini: La clé API Gemini n'est pas configurée.
+2026-03-03 09:02:15,039 [ERROR] workflow.services.gemini_base: CLÉ API GEMINI NON CONFIGURÉE !
+2026-03-03 09:02:15,039 [ERROR] workflow.services.gemini_courrier_service: Erreur initialisation Gemini: La clé API Gemini n'est pas configurée.
+2026-03-03 09:02:34,402 [ERROR] workflow.services.gemini_base: CLÉ API GEMINI NON CONFIGURÉE !
+2026-03-03 09:02:34,402 [ERROR] workflow.services.gemini_courrier_service: Erreur initialisation Gemini: La clé API Gemini n'est pas configurée.
+2026-03-03 09:18:03,181 [INFO] workflow.services.ocr: Début de l'OCR sur: C:\Users\LASOUR~1\AppData\Local\Temp\Courrier1.pdf
+2026-03-03 09:18:03,182 [INFO] workflow.services.ocr: Tentative d'extraction texte natif PDF...
+2026-03-03 09:18:03,204 [INFO] workflow.services.ocr: Début de l'OCR PDF (document scanné)...
+2026-03-03 09:18:04,729 [INFO] workflow.services.ocr: PDF converti en 1 images
+2026-03-03 09:18:04,729 [INFO] workflow.services.ocr: Traitement OCR page 1/1
+2026-03-03 09:18:08,811 [INFO] workflow.services.ocr: OCR terminé: 1145 caractères extraits
+2026-03-03 09:18:09,057 [ERROR] workflow.services.gemini_courrier_service: Service Gemini non disponible
+2026-03-03 09:18:09,057 [INFO] workflow.services.gemini_courrier_service: Utilisation de l'analyse de fallback
+2026-03-03 09:18:09,066 [INFO] workflow.services.classifier: Classification: ADMINISTRATIF (0.30), Priorité: BASSE, Objet: Proposition de formation Monsieur le directeur Gén...
+2026-03-03 09:19:55,409 [ERROR] workflow.services.gemini_ocr: Erreur Gemini OCR: Your default credentials were not found. To set up Application Default Credentials, see https://cloud.google.com/docs/authentication/external/set-up-adc for more information.
+2026-03-03 09:19:55,409 [INFO] workflow.services.classifier: Classification: ADMINISTRATIF (0.30), Priorité: BASSE, Objet: Proposition de formation Monsieur le directeur Gén...
+2026-03-03 09:31:42,060 [ERROR] workflow.services.gemini_base: CLÉ API GEMINI NON CONFIGURÉE !
+2026-03-03 09:31:42,060 [ERROR] workflow.services.gemini_courrier_service: Erreur initialisation Gemini: La clé API Gemini n'est pas configurée.
+2026-03-03 09:32:57,610 [ERROR] workflow.services.gemini_base: CLÉ API GEMINI NON CONFIGURÉE !
+2026-03-03 09:32:57,610 [ERROR] workflow.services.gemini_courrier_service: Erreur initialisation Gemini: La clé API Gemini n'est pas configurée.
+2026-03-03 09:33:49,088 [ERROR] workflow.services.gemini_base: CLÉ API GEMINI NON CONFIGURÉE !
+2026-03-03 09:33:49,089 [ERROR] workflow.services.gemini_courrier_service: Erreur initialisation Gemini: La clé API Gemini n'est pas configurée.
+2026-03-03 09:42:02,088 [ERROR] workflow.services.gemini_base: CLÉ API GEMINI NON CONFIGURÉE !
+2026-03-03 09:42:02,088 [ERROR] workflow.services.gemini_courrier_service: Erreur initialisation Gemini: La clé API Gemini n'est pas configurée.
+2026-03-03 09:45:48,283 [ERROR] workflow.services.gemini_base: CLÉ API GEMINI NON CONFIGURÉE !
+2026-03-03 09:45:48,283 [ERROR] workflow.services.gemini_courrier_service: Erreur initialisation Gemini: La clé API Gemini n'est pas configurée.
+2026-03-03 09:49:06,714 [ERROR] workflow.services.gemini_base: CLÉ API GEMINI NON CONFIGURÉE !
+2026-03-03 09:49:06,714 [ERROR] workflow.services.gemini_courrier_service: Erreur initialisation Gemini: La clé API Gemini n'est pas configurée.
+2026-03-03 09:51:19,322 [ERROR] workflow.services.gemini_base: CLÉ API GEMINI NON CONFIGURÉE !
+2026-03-03 09:51:19,322 [ERROR] workflow.services.gemini_courrier_service: Erreur initialisation Gemini: La clé API Gemini n'est pas configurée.
+2026-03-03 09:53:02,614 [ERROR] workflow.services.gemini_base: CLÉ API GEMINI NON CONFIGURÉE !
+2026-03-03 09:53:02,614 [ERROR] workflow.services.gemini_courrier_service: Erreur initialisation Gemini: La clé API Gemini n'est pas configurée.
+2026-03-03 09:54:18,618 [ERROR] workflow.services.gemini_base: CLÉ API GEMINI NON CONFIGURÉE !
+2026-03-03 09:54:18,618 [ERROR] workflow.services.gemini_courrier_service: Erreur initialisation Gemini: La clé API Gemini n'est pas configurée.
+2026-03-03 09:54:38,482 [ERROR] workflow.services.gemini_base: CLÉ API GEMINI NON CONFIGURÉE !
+2026-03-03 09:54:38,482 [ERROR] workflow.services.gemini_courrier_service: Erreur initialisation Gemini: La clé API Gemini n'est pas configurée.
+2026-03-03 10:01:46,916 [ERROR] workflow.services.gemini_base: CLÉ API GEMINI NON CONFIGURÉE !
+2026-03-03 10:01:46,917 [ERROR] workflow.services.gemini_courrier_service: Erreur initialisation Gemini: La clé API Gemini n'est pas configurée.
+2026-03-03 10:51:07,563 [ERROR] workflow.services.gemini_base: CLÉ API GEMINI NON CONFIGURÉE !
+2026-03-03 10:51:07,563 [ERROR] workflow.services.gemini_courrier_service: Erreur initialisation Gemini: La clé API Gemini n'est pas configurée.
+2026-03-03 10:57:46,645 [ERROR] workflow.services.gemini_base: CLÉ API GEMINI NON CONFIGURÉE !
+2026-03-03 10:57:46,645 [ERROR] workflow.services.gemini_courrier_service: Erreur initialisation Gemini: La clé API Gemini n'est pas configurée.
+2026-03-03 11:02:49,694 [ERROR] workflow.services.gemini_base: CLÉ API GEMINI NON CONFIGURÉE !
+2026-03-03 11:02:49,694 [ERROR] workflow.services.gemini_courrier_service: Erreur initialisation Gemini: La clé API Gemini n'est pas configurée.
+2026-03-03 11:03:02,182 [ERROR] workflow.services.gemini_ocr: Erreur Gemini OCR: Your default credentials were not found. To set up Application Default Credentials, see https://cloud.google.com/docs/authentication/external/set-up-adc for more information.
+2026-03-03 11:06:01,851 [ERROR] workflow.services.gemini_ocr: Erreur Gemini OCR: Your default credentials were not found. To set up Application Default Credentials, see https://cloud.google.com/docs/authentication/external/set-up-adc for more information.
+2026-03-03 11:12:21,830 [ERROR] workflow.services.gemini_base: CLÉ API GEMINI NON CONFIGURÉE !
+2026-03-03 11:12:21,830 [ERROR] workflow.services.gemini_courrier_service: Erreur initialisation Gemini: La clé API Gemini n'est pas configurée.
+2026-03-03 11:14:43,124 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-03 11:14:57,918 [ERROR] workflow.services.gemini_ocr: Erreur API Gemini: {
+  "error": {
+    "code": 404,
+    "message": "models/gemini-1.5-flash is not found for API version v1beta, or is not supported for generateContent. Call ListModels to see the list of available models and their supported methods.",
+    "status": "NOT_FOUND"
+  }
+}
+
+2026-03-03 11:14:57,918 [ERROR] workflow.services.gemini_ocr: Erreur dans extraire_texte: Erreur API Gemini: 404
+2026-03-03 11:15:15,763 [ERROR] workflow.services.gemini_ocr: Erreur API Gemini: {
+  "error": {
+    "code": 404,
+    "message": "models/gemini-1.5-flash is not found for API version v1beta, or is not supported for generateContent. Call ListModels to see the list of available models and their supported methods.",
+    "status": "NOT_FOUND"
+  }
+}
+
+2026-03-03 11:15:15,763 [ERROR] workflow.services.gemini_ocr: Erreur dans extraire_texte: Erreur API Gemini: 404
+2026-03-03 11:16:04,855 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-03 11:31:34,555 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-03 11:31:51,923 [ERROR] workflow.services.gemini_ocr: Erreur API Gemini: {
+  "error": {
+    "code": 404,
+    "message": "models/gemini-1.5-flash is not found for API version v1beta, or is not supported for generateContent. Call ListModels to see the list of available models and their supported methods.",
+    "status": "NOT_FOUND"
+  }
+}
+
+2026-03-03 11:31:51,923 [ERROR] workflow.services.gemini_ocr: Erreur dans extraire_texte: Erreur API Gemini: 404
+2026-03-03 11:34:15,547 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-03 11:35:42,324 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-03 11:37:54,540 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-03 11:38:13,035 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-03 11:38:30,106 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-03 11:44:37,324 [ERROR] workflow.services.gemini_ocr: Erreur Gemini OCR: Timeout of 60.0s exceeded, last exception: 503 DNS resolution failed for generativelanguage.googleapis.com:443: UNAVAILABLE: getaddrinfo: WSA Error (Unable to retrieve error string -- 11001)
+Traceback (most recent call last):
+  File "C:\Python312\Lib\site-packages\google\api_core\grpc_helpers.py", line 75, in error_remapped_callable
+    return callable_(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python312\Lib\site-packages\grpc\_channel.py", line 1166, in __call__
+    return _end_unary_response_blocking(state, call, False, None)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python312\Lib\site-packages\grpc\_channel.py", line 996, in _end_unary_response_blocking
+    raise _InactiveRpcError(state)  # pytype: disable=not-instantiable
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+grpc._channel._InactiveRpcError: <_InactiveRpcError of RPC that terminated with:
+	status = StatusCode.UNAVAILABLE
+	details = "DNS resolution failed for generativelanguage.googleapis.com:443: UNAVAILABLE: getaddrinfo: WSA Error (Unable to retrieve error string -- 11001)"
+	debug_error_string = "UNKNOWN:Error received from peer  {grpc_message:"DNS resolution failed for generativelanguage.googleapis.com:443: UNAVAILABLE: getaddrinfo: WSA Error (Unable to retrieve error string -- 11001)", grpc_status:14}"
+>
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Python312\Lib\site-packages\google\api_core\retry\retry_unary.py", line 147, in retry_target
+    result = target()
+             ^^^^^^^^
+  File "C:\Python312\Lib\site-packages\google\api_core\timeout.py", line 130, in func_with_timeout
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python312\Lib\site-packages\google\api_core\grpc_helpers.py", line 77, in error_remapped_callable
+    raise exceptions.from_grpc_error(exc) from exc
+google.api_core.exceptions.ServiceUnavailable: 503 DNS resolution failed for generativelanguage.googleapis.com:443: UNAVAILABLE: getaddrinfo: WSA Error (Unable to retrieve error string -- 11001)
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\MesProjets\gestion_courrier\backend-courrier-amina\workflow\services\gemini_ocr.py", line 31, in extraire_texte
+    response = self.model.generate_content([
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python312\Lib\site-packages\google\generativeai\generative_models.py", line 248, in generate_content
+    response = self._client.generate_content(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python312\Lib\site-packages\google\ai\generativelanguage_v1beta\services\generative_service\client.py", line 566, in generate_content
+    response = rpc(
+               ^^^^
+  File "C:\Python312\Lib\site-packages\google\api_core\gapic_v1\method.py", line 131, in __call__
+    return wrapped_func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python312\Lib\site-packages\google\api_core\retry\retry_unary.py", line 294, in retry_wrapped_func
+    return retry_target(
+           ^^^^^^^^^^^^^
+  File "C:\Python312\Lib\site-packages\google\api_core\retry\retry_unary.py", line 156, in retry_target
+    next_sleep = _retry_error_helper(
+                 ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python312\Lib\site-packages\google\api_core\retry\retry_base.py", line 229, in _retry_error_helper
+    raise final_exc from source_exc
+google.api_core.exceptions.RetryError: Timeout of 60.0s exceeded, last exception: 503 DNS resolution failed for generativelanguage.googleapis.com:443: UNAVAILABLE: getaddrinfo: WSA Error (Unable to retrieve error string -- 11001)
+2026-03-03 11:59:31,212 [ERROR] workflow.services.gemini_ocr: Erreur Gemini OCR: 404 models/gemini-1.5-flash is not found for API version v1beta, or is not supported for generateContent. Call ListModels to see the list of available models and their supported methods.
+Traceback (most recent call last):
+  File "C:\MesProjets\gestion_courrier\backend-courrier-amina\workflow\services\gemini_ocr.py", line 31, in extraire_texte
+    response = self.model.generate_content([
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python312\Lib\site-packages\google\generativeai\generative_models.py", line 248, in generate_content
+    response = self._client.generate_content(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python312\Lib\site-packages\google\ai\generativelanguage_v1beta\services\generative_service\client.py", line 566, in generate_content
+    response = rpc(
+               ^^^^
+  File "C:\Python312\Lib\site-packages\google\api_core\gapic_v1\method.py", line 131, in __call__
+    return wrapped_func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python312\Lib\site-packages\google\api_core\retry\retry_unary.py", line 294, in retry_wrapped_func
+    return retry_target(
+           ^^^^^^^^^^^^^
+  File "C:\Python312\Lib\site-packages\google\api_core\retry\retry_unary.py", line 156, in retry_target
+    next_sleep = _retry_error_helper(
+                 ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python312\Lib\site-packages\google\api_core\retry\retry_base.py", line 214, in _retry_error_helper
+    raise final_exc from source_exc
+  File "C:\Python312\Lib\site-packages\google\api_core\retry\retry_unary.py", line 147, in retry_target
+    result = target()
+             ^^^^^^^^
+  File "C:\Python312\Lib\site-packages\google\api_core\timeout.py", line 130, in func_with_timeout
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python312\Lib\site-packages\google\api_core\grpc_helpers.py", line 77, in error_remapped_callable
+    raise exceptions.from_grpc_error(exc) from exc
+google.api_core.exceptions.NotFound: 404 models/gemini-1.5-flash is not found for API version v1beta, or is not supported for generateContent. Call ListModels to see the list of available models and their supported methods.
+2026-03-03 12:03:58,648 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-03 12:07:16,930 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-03 12:07:37,924 [ERROR] workflow.services.gemini_ocr: Erreur Gemini OCR: 429 You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. 
+* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_input_token_count, limit: 0, model: gemini-2.0-flash
+* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash
+* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash
+Please retry in 21.895773527s. [links {
+  description: "Learn more about Gemini API quotas"
+  url: "https://ai.google.dev/gemini-api/docs/rate-limits"
+}
+, violations {
+  quota_metric: "generativelanguage.googleapis.com/generate_content_free_tier_input_token_count"
+  quota_id: "GenerateContentInputTokensPerModelPerMinute-FreeTier"
+  quota_dimensions {
+    key: "model"
+    value: "gemini-2.0-flash"
+  }
+  quota_dimensions {
+    key: "location"
+    value: "global"
+  }
+}
+violations {
+  quota_metric: "generativelanguage.googleapis.com/generate_content_free_tier_requests"
+  quota_id: "GenerateRequestsPerMinutePerProjectPerModel-FreeTier"
+  quota_dimensions {
+    key: "model"
+    value: "gemini-2.0-flash"
+  }
+  quota_dimensions {
+    key: "location"
+    value: "global"
+  }
+}
+violations {
+  quota_metric: "generativelanguage.googleapis.com/generate_content_free_tier_requests"
+  quota_id: "GenerateRequestsPerDayPerProjectPerModel-FreeTier"
+  quota_dimensions {
+    key: "model"
+    value: "gemini-2.0-flash"
+  }
+  quota_dimensions {
+    key: "location"
+    value: "global"
+  }
+}
+, retry_delay {
+  seconds: 21
+}
+]
+Traceback (most recent call last):
+  File "C:\MesProjets\gestion_courrier\backend-courrier-amina\workflow\services\gemini_ocr.py", line 31, in extraire_texte
+    response = self.model.generate_content([
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python312\Lib\site-packages\google\generativeai\generative_models.py", line 331, in generate_content
+    response = self._client.generate_content(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python312\Lib\site-packages\google\ai\generativelanguage_v1beta\services\generative_service\client.py", line 835, in generate_content
+    response = rpc(
+               ^^^^
+  File "C:\Python312\Lib\site-packages\google\api_core\gapic_v1\method.py", line 131, in __call__
+    return wrapped_func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python312\Lib\site-packages\google\api_core\retry\retry_unary.py", line 294, in retry_wrapped_func
+    return retry_target(
+           ^^^^^^^^^^^^^
+  File "C:\Python312\Lib\site-packages\google\api_core\retry\retry_unary.py", line 156, in retry_target
+    next_sleep = _retry_error_helper(
+                 ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python312\Lib\site-packages\google\api_core\retry\retry_base.py", line 214, in _retry_error_helper
+    raise final_exc from source_exc
+  File "C:\Python312\Lib\site-packages\google\api_core\retry\retry_unary.py", line 147, in retry_target
+    result = target()
+             ^^^^^^^^
+  File "C:\Python312\Lib\site-packages\google\api_core\timeout.py", line 130, in func_with_timeout
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python312\Lib\site-packages\google\api_core\grpc_helpers.py", line 77, in error_remapped_callable
+    raise exceptions.from_grpc_error(exc) from exc
+google.api_core.exceptions.ResourceExhausted: 429 You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. 
+* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_input_token_count, limit: 0, model: gemini-2.0-flash
+* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash
+* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash
+Please retry in 21.895773527s. [links {
+  description: "Learn more about Gemini API quotas"
+  url: "https://ai.google.dev/gemini-api/docs/rate-limits"
+}
+, violations {
+  quota_metric: "generativelanguage.googleapis.com/generate_content_free_tier_input_token_count"
+  quota_id: "GenerateContentInputTokensPerModelPerMinute-FreeTier"
+  quota_dimensions {
+    key: "model"
+    value: "gemini-2.0-flash"
+  }
+  quota_dimensions {
+    key: "location"
+    value: "global"
+  }
+}
+violations {
+  quota_metric: "generativelanguage.googleapis.com/generate_content_free_tier_requests"
+  quota_id: "GenerateRequestsPerMinutePerProjectPerModel-FreeTier"
+  quota_dimensions {
+    key: "model"
+    value: "gemini-2.0-flash"
+  }
+  quota_dimensions {
+    key: "location"
+    value: "global"
+  }
+}
+violations {
+  quota_metric: "generativelanguage.googleapis.com/generate_content_free_tier_requests"
+  quota_id: "GenerateRequestsPerDayPerProjectPerModel-FreeTier"
+  quota_dimensions {
+    key: "model"
+    value: "gemini-2.0-flash"
+  }
+  quota_dimensions {
+    key: "location"
+    value: "global"
+  }
+}
+, retry_delay {
+  seconds: 21
+}
+]
+2026-03-03 12:17:43,807 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-03 12:17:51,393 [ERROR] workflow.services.gemini_ocr: Erreur Gemini OCR: 429 You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. 
+* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash
+* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash
+* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_input_token_count, limit: 0, model: gemini-2.0-flash
+Please retry in 8.416117756s. [links {
+  description: "Learn more about Gemini API quotas"
+  url: "https://ai.google.dev/gemini-api/docs/rate-limits"
+}
+, violations {
+  quota_metric: "generativelanguage.googleapis.com/generate_content_free_tier_requests"
+  quota_id: "GenerateRequestsPerDayPerProjectPerModel-FreeTier"
+  quota_dimensions {
+    key: "model"
+    value: "gemini-2.0-flash"
+  }
+  quota_dimensions {
+    key: "location"
+    value: "global"
+  }
+}
+violations {
+  quota_metric: "generativelanguage.googleapis.com/generate_content_free_tier_requests"
+  quota_id: "GenerateRequestsPerMinutePerProjectPerModel-FreeTier"
+  quota_dimensions {
+    key: "model"
+    value: "gemini-2.0-flash"
+  }
+  quota_dimensions {
+    key: "location"
+    value: "global"
+  }
+}
+violations {
+  quota_metric: "generativelanguage.googleapis.com/generate_content_free_tier_input_token_count"
+  quota_id: "GenerateContentInputTokensPerModelPerMinute-FreeTier"
+  quota_dimensions {
+    key: "model"
+    value: "gemini-2.0-flash"
+  }
+  quota_dimensions {
+    key: "location"
+    value: "global"
+  }
+}
+, retry_delay {
+  seconds: 8
+}
+]
+Traceback (most recent call last):
+  File "C:\MesProjets\gestion_courrier\backend-courrier-amina\workflow\services\gemini_ocr.py", line 31, in extraire_texte
+    response = self.model.generate_content([
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python312\Lib\site-packages\google\generativeai\generative_models.py", line 331, in generate_content
+    response = self._client.generate_content(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python312\Lib\site-packages\google\ai\generativelanguage_v1beta\services\generative_service\client.py", line 835, in generate_content
+    response = rpc(
+               ^^^^
+  File "C:\Python312\Lib\site-packages\google\api_core\gapic_v1\method.py", line 131, in __call__
+    return wrapped_func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python312\Lib\site-packages\google\api_core\retry\retry_unary.py", line 294, in retry_wrapped_func
+    return retry_target(
+           ^^^^^^^^^^^^^
+  File "C:\Python312\Lib\site-packages\google\api_core\retry\retry_unary.py", line 156, in retry_target
+    next_sleep = _retry_error_helper(
+                 ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python312\Lib\site-packages\google\api_core\retry\retry_base.py", line 214, in _retry_error_helper
+    raise final_exc from source_exc
+  File "C:\Python312\Lib\site-packages\google\api_core\retry\retry_unary.py", line 147, in retry_target
+    result = target()
+             ^^^^^^^^
+  File "C:\Python312\Lib\site-packages\google\api_core\timeout.py", line 130, in func_with_timeout
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python312\Lib\site-packages\google\api_core\grpc_helpers.py", line 77, in error_remapped_callable
+    raise exceptions.from_grpc_error(exc) from exc
+google.api_core.exceptions.ResourceExhausted: 429 You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. 
+* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash
+* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash
+* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_input_token_count, limit: 0, model: gemini-2.0-flash
+Please retry in 8.416117756s. [links {
+  description: "Learn more about Gemini API quotas"
+  url: "https://ai.google.dev/gemini-api/docs/rate-limits"
+}
+, violations {
+  quota_metric: "generativelanguage.googleapis.com/generate_content_free_tier_requests"
+  quota_id: "GenerateRequestsPerDayPerProjectPerModel-FreeTier"
+  quota_dimensions {
+    key: "model"
+    value: "gemini-2.0-flash"
+  }
+  quota_dimensions {
+    key: "location"
+    value: "global"
+  }
+}
+violations {
+  quota_metric: "generativelanguage.googleapis.com/generate_content_free_tier_requests"
+  quota_id: "GenerateRequestsPerMinutePerProjectPerModel-FreeTier"
+  quota_dimensions {
+    key: "model"
+    value: "gemini-2.0-flash"
+  }
+  quota_dimensions {
+    key: "location"
+    value: "global"
+  }
+}
+violations {
+  quota_metric: "generativelanguage.googleapis.com/generate_content_free_tier_input_token_count"
+  quota_id: "GenerateContentInputTokensPerModelPerMinute-FreeTier"
+  quota_dimensions {
+    key: "model"
+    value: "gemini-2.0-flash"
+  }
+  quota_dimensions {
+    key: "location"
+    value: "global"
+  }
+}
+, retry_delay {
+  seconds: 8
+}
+]
+2026-03-03 12:21:01,809 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-03 12:23:06,771 [INFO] workflow.services.classifier: Classification: FORMATION (0.35), Priorité: BASSE, Objet: demande de stage**...
+2026-03-03 12:27:43,146 [INFO] workflow.services.classifier: Classification: ADMINISTRATIF (0.30), Priorité: HAUTE, Objet: Proposition de formation**...
+2026-03-03 12:42:33,328 [ERROR] workflow.services.gemini_base: CLÉ API GEMINI NON CONFIGURÉE !
+2026-03-03 12:42:33,328 [ERROR] workflow.services.gemini_courrier_service: Erreur initialisation Gemini: La clé API Gemini n'est pas configurée.
+2026-03-03 12:42:56,584 [ERROR] workflow.services.gemini_base: CLÉ API GEMINI NON CONFIGURÉE !
+2026-03-03 12:42:56,584 [ERROR] workflow.services.gemini_courrier_service: Erreur initialisation Gemini: La clé API Gemini n'est pas configurée.
+2026-03-03 12:43:12,045 [ERROR] workflow.services.gemini_ocr: Erreur Gemini OCR: 
+  No API_KEY or ADC found. Please either:
+    - Set the `GOOGLE_API_KEY` environment variable.
+    - Manually pass the key with `genai.configure(api_key=my_api_key)`.
+    - Or set up Application Default Credentials, see https://ai.google.dev/gemini-api/docs/oauth for more information.
+Traceback (most recent call last):
+  File "C:\MesProjets\gestion_courrier\backend-courrier-amina\workflow\services\gemini_ocr.py", line 31, in extraire_texte
+    response = self.model.generate_content([
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python312\Lib\site-packages\google\generativeai\generative_models.py", line 317, in generate_content
+    self._client = client.get_default_generative_client()
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python312\Lib\site-packages\google\generativeai\client.py", line 360, in get_default_generative_client
+    return _client_manager.get_default_client("generative")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python312\Lib\site-packages\google\generativeai\client.py", line 289, in get_default_client
+    client = self.make_client(name)
+             ^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python312\Lib\site-packages\google\generativeai\client.py", line 249, in make_client
+    raise e
+  File "C:\Python312\Lib\site-packages\google\generativeai\client.py", line 241, in make_client
+    client = cls(**self.client_config)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python312\Lib\site-packages\google\ai\generativelanguage_v1beta\services\generative_service\client.py", line 667, in __init__
+    self._transport = transport_init(
+                      ^^^^^^^^^^^^^^^
+  File "C:\Python312\Lib\site-packages\google\ai\generativelanguage_v1beta\services\generative_service\transports\grpc.py", line 235, in __init__
+    super().__init__(
+  File "C:\Python312\Lib\site-packages\google\ai\generativelanguage_v1beta\services\generative_service\transports\base.py", line 100, in __init__
+    credentials, _ = google.auth.default(
+                     ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python312\Lib\site-packages\google\auth\_default.py", line 752, in default
+    raise exceptions.DefaultCredentialsError(_CLOUD_SDK_MISSING_CREDENTIALS)
+google.auth.exceptions.DefaultCredentialsError: 
+  No API_KEY or ADC found. Please either:
+    - Set the `GOOGLE_API_KEY` environment variable.
+    - Manually pass the key with `genai.configure(api_key=my_api_key)`.
+    - Or set up Application Default Credentials, see https://ai.google.dev/gemini-api/docs/oauth for more information.
+2026-03-03 12:44:12,114 [ERROR] workflow.services.gemini_ocr: Erreur Gemini OCR: 
+  No API_KEY or ADC found. Please either:
+    - Set the `GOOGLE_API_KEY` environment variable.
+    - Manually pass the key with `genai.configure(api_key=my_api_key)`.
+    - Or set up Application Default Credentials, see https://ai.google.dev/gemini-api/docs/oauth for more information.
+Traceback (most recent call last):
+  File "C:\MesProjets\gestion_courrier\backend-courrier-amina\workflow\services\gemini_ocr.py", line 31, in extraire_texte
+    response = self.model.generate_content([
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python312\Lib\site-packages\google\generativeai\generative_models.py", line 317, in generate_content
+    self._client = client.get_default_generative_client()
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python312\Lib\site-packages\google\generativeai\client.py", line 360, in get_default_generative_client
+    return _client_manager.get_default_client("generative")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python312\Lib\site-packages\google\generativeai\client.py", line 289, in get_default_client
+    client = self.make_client(name)
+             ^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python312\Lib\site-packages\google\generativeai\client.py", line 249, in make_client
+    raise e
+  File "C:\Python312\Lib\site-packages\google\generativeai\client.py", line 241, in make_client
+    client = cls(**self.client_config)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python312\Lib\site-packages\google\ai\generativelanguage_v1beta\services\generative_service\client.py", line 667, in __init__
+    self._transport = transport_init(
+                      ^^^^^^^^^^^^^^^
+  File "C:\Python312\Lib\site-packages\google\ai\generativelanguage_v1beta\services\generative_service\transports\grpc.py", line 235, in __init__
+    super().__init__(
+  File "C:\Python312\Lib\site-packages\google\ai\generativelanguage_v1beta\services\generative_service\transports\base.py", line 100, in __init__
+    credentials, _ = google.auth.default(
+                     ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python312\Lib\site-packages\google\auth\_default.py", line 752, in default
+    raise exceptions.DefaultCredentialsError(_CLOUD_SDK_MISSING_CREDENTIALS)
+google.auth.exceptions.DefaultCredentialsError: 
+  No API_KEY or ADC found. Please either:
+    - Set the `GOOGLE_API_KEY` environment variable.
+    - Manually pass the key with `genai.configure(api_key=my_api_key)`.
+    - Or set up Application Default Credentials, see https://ai.google.dev/gemini-api/docs/oauth for more information.
+2026-03-03 12:45:49,329 [ERROR] workflow.services.gemini_ocr: Erreur Gemini OCR: 
+  No API_KEY or ADC found. Please either:
+    - Set the `GOOGLE_API_KEY` environment variable.
+    - Manually pass the key with `genai.configure(api_key=my_api_key)`.
+    - Or set up Application Default Credentials, see https://ai.google.dev/gemini-api/docs/oauth for more information.
+Traceback (most recent call last):
+  File "C:\MesProjets\gestion_courrier\backend-courrier-amina\workflow\services\gemini_ocr.py", line 31, in extraire_texte
+    response = self.model.generate_content([
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python312\Lib\site-packages\google\generativeai\generative_models.py", line 317, in generate_content
+    self._client = client.get_default_generative_client()
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python312\Lib\site-packages\google\generativeai\client.py", line 360, in get_default_generative_client
+    return _client_manager.get_default_client("generative")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python312\Lib\site-packages\google\generativeai\client.py", line 289, in get_default_client
+    client = self.make_client(name)
+             ^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python312\Lib\site-packages\google\generativeai\client.py", line 249, in make_client
+    raise e
+  File "C:\Python312\Lib\site-packages\google\generativeai\client.py", line 241, in make_client
+    client = cls(**self.client_config)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python312\Lib\site-packages\google\ai\generativelanguage_v1beta\services\generative_service\client.py", line 667, in __init__
+    self._transport = transport_init(
+                      ^^^^^^^^^^^^^^^
+  File "C:\Python312\Lib\site-packages\google\ai\generativelanguage_v1beta\services\generative_service\transports\grpc.py", line 235, in __init__
+    super().__init__(
+  File "C:\Python312\Lib\site-packages\google\ai\generativelanguage_v1beta\services\generative_service\transports\base.py", line 100, in __init__
+    credentials, _ = google.auth.default(
+                     ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python312\Lib\site-packages\google\auth\_default.py", line 752, in default
+    raise exceptions.DefaultCredentialsError(_CLOUD_SDK_MISSING_CREDENTIALS)
+google.auth.exceptions.DefaultCredentialsError: 
+  No API_KEY or ADC found. Please either:
+    - Set the `GOOGLE_API_KEY` environment variable.
+    - Manually pass the key with `genai.configure(api_key=my_api_key)`.
+    - Or set up Application Default Credentials, see https://ai.google.dev/gemini-api/docs/oauth for more information.
+2026-03-03 12:50:42,320 [ERROR] workflow.services.gemini_base: CLÉ API GEMINI NON CONFIGURÉE !
+2026-03-03 12:50:42,320 [ERROR] workflow.services.gemini_courrier_service: Erreur initialisation Gemini: La clé API Gemini n'est pas configurée.
+2026-03-03 12:51:38,965 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-03 13:03:12,703 [ERROR] workflow.services.gemini_ocr: Erreur Gemini OCR: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:142.251.39.170:443: tcp handshaker shutdown
+Traceback (most recent call last):
+  File "C:\Python312\Lib\site-packages\google\api_core\grpc_helpers.py", line 75, in error_remapped_callable
+    return callable_(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python312\Lib\site-packages\grpc\_interceptor.py", line 276, in __call__
+    response, ignored_call = self._with_call(
+                             ^^^^^^^^^^^^^^^^
+  File "C:\Python312\Lib\site-packages\grpc\_interceptor.py", line 331, in _with_call
+    return call.result(), call
+           ^^^^^^^^^^^^^
+  File "C:\Python312\Lib\site-packages\grpc\_channel.py", line 438, in result
+    raise self
+  File "C:\Python312\Lib\site-packages\grpc\_interceptor.py", line 314, in continuation
+    response, call = self._thunk(new_method).with_call(
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python312\Lib\site-packages\grpc\_channel.py", line 1180, in with_call
+    return _end_unary_response_blocking(state, call, True, None)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python312\Lib\site-packages\grpc\_channel.py", line 996, in _end_unary_response_blocking
+    raise _InactiveRpcError(state)  # pytype: disable=not-instantiable
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+grpc._channel._InactiveRpcError: <_InactiveRpcError of RPC that terminated with:
+	status = StatusCode.UNAVAILABLE
+	details = "failed to connect to all addresses; last error: UNKNOWN: ipv4:142.251.39.170:443: tcp handshaker shutdown"
+	debug_error_string = "UNKNOWN:Error received from peer  {grpc_status:14, grpc_message:"failed to connect to all addresses; last error: UNKNOWN: ipv4:142.251.39.170:443: tcp handshaker shutdown"}"
+>
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Python312\Lib\site-packages\google\api_core\retry\retry_unary.py", line 147, in retry_target
+    result = target()
+             ^^^^^^^^
+  File "C:\Python312\Lib\site-packages\google\api_core\timeout.py", line 130, in func_with_timeout
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python312\Lib\site-packages\google\api_core\grpc_helpers.py", line 77, in error_remapped_callable
+    raise exceptions.from_grpc_error(exc) from exc
+google.api_core.exceptions.ServiceUnavailable: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:142.251.39.170:443: tcp handshaker shutdown
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\MesProjets\gestion_courrier\backend-courrier-amina\workflow\services\gemini_ocr.py", line 31, in extraire_texte
+    response = self.model.generate_content([
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python312\Lib\site-packages\google\generativeai\generative_models.py", line 331, in generate_content
+    response = self._client.generate_content(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python312\Lib\site-packages\google\ai\generativelanguage_v1beta\services\generative_service\client.py", line 835, in generate_content
+    response = rpc(
+               ^^^^
+  File "C:\Python312\Lib\site-packages\google\api_core\gapic_v1\method.py", line 131, in __call__
+    return wrapped_func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python312\Lib\site-packages\google\api_core\retry\retry_unary.py", line 294, in retry_wrapped_func
+    return retry_target(
+           ^^^^^^^^^^^^^
+  File "C:\Python312\Lib\site-packages\google\api_core\retry\retry_unary.py", line 156, in retry_target
+    next_sleep = _retry_error_helper(
+                 ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python312\Lib\site-packages\google\api_core\retry\retry_base.py", line 229, in _retry_error_helper
+    raise final_exc from source_exc
+google.api_core.exceptions.RetryError: Timeout of 600.0s exceeded, last exception: 503 failed to connect to all addresses; last error: UNKNOWN: ipv4:142.251.39.170:443: tcp handshaker shutdown
+2026-03-03 13:03:12,826 [INFO] workflow.services.classifier: Classification: ADMINISTRATIF (0.30), Priorité: BASSE, Objet: test de description...
+2026-03-03 13:06:54,044 [ERROR] workflow.services.gemini_ocr: Erreur Gemini OCR: Timeout of 600.0s exceeded, last exception: 503 DNS resolution failed for generativelanguage.googleapis.com:443: UNAVAILABLE: getaddrinfo: WSA Error (Unable to retrieve error string -- 11001)
+Traceback (most recent call last):
+  File "C:\Python312\Lib\site-packages\google\api_core\grpc_helpers.py", line 75, in error_remapped_callable
+    return callable_(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python312\Lib\site-packages\grpc\_interceptor.py", line 276, in __call__
+    response, ignored_call = self._with_call(
+                             ^^^^^^^^^^^^^^^^
+  File "C:\Python312\Lib\site-packages\grpc\_interceptor.py", line 331, in _with_call
+    return call.result(), call
+           ^^^^^^^^^^^^^
+  File "C:\Python312\Lib\site-packages\grpc\_channel.py", line 438, in result
+    raise self
+  File "C:\Python312\Lib\site-packages\grpc\_interceptor.py", line 314, in continuation
+    response, call = self._thunk(new_method).with_call(
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python312\Lib\site-packages\grpc\_channel.py", line 1180, in with_call
+    return _end_unary_response_blocking(state, call, True, None)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python312\Lib\site-packages\grpc\_channel.py", line 996, in _end_unary_response_blocking
+    raise _InactiveRpcError(state)  # pytype: disable=not-instantiable
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+grpc._channel._InactiveRpcError: <_InactiveRpcError of RPC that terminated with:
+	status = StatusCode.UNAVAILABLE
+	details = "DNS resolution failed for generativelanguage.googleapis.com:443: UNAVAILABLE: getaddrinfo: WSA Error (Unable to retrieve error string -- 11001)"
+	debug_error_string = "UNKNOWN:Error received from peer  {grpc_message:"DNS resolution failed for generativelanguage.googleapis.com:443: UNAVAILABLE: getaddrinfo: WSA Error (Unable to retrieve error string -- 11001)", grpc_status:14}"
+>
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Python312\Lib\site-packages\google\api_core\retry\retry_unary.py", line 147, in retry_target
+    result = target()
+             ^^^^^^^^
+  File "C:\Python312\Lib\site-packages\google\api_core\timeout.py", line 130, in func_with_timeout
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python312\Lib\site-packages\google\api_core\grpc_helpers.py", line 77, in error_remapped_callable
+    raise exceptions.from_grpc_error(exc) from exc
+google.api_core.exceptions.ServiceUnavailable: 503 DNS resolution failed for generativelanguage.googleapis.com:443: UNAVAILABLE: getaddrinfo: WSA Error (Unable to retrieve error string -- 11001)
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\MesProjets\gestion_courrier\backend-courrier-amina\workflow\services\gemini_ocr.py", line 31, in extraire_texte
+    response = self.model.generate_content([
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python312\Lib\site-packages\google\generativeai\generative_models.py", line 331, in generate_content
+    response = self._client.generate_content(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python312\Lib\site-packages\google\ai\generativelanguage_v1beta\services\generative_service\client.py", line 835, in generate_content
+    response = rpc(
+               ^^^^
+  File "C:\Python312\Lib\site-packages\google\api_core\gapic_v1\method.py", line 131, in __call__
+    return wrapped_func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python312\Lib\site-packages\google\api_core\retry\retry_unary.py", line 294, in retry_wrapped_func
+    return retry_target(
+           ^^^^^^^^^^^^^
+  File "C:\Python312\Lib\site-packages\google\api_core\retry\retry_unary.py", line 156, in retry_target
+    next_sleep = _retry_error_helper(
+                 ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python312\Lib\site-packages\google\api_core\retry\retry_base.py", line 229, in _retry_error_helper
+    raise final_exc from source_exc
+google.api_core.exceptions.RetryError: Timeout of 600.0s exceeded, last exception: 503 DNS resolution failed for generativelanguage.googleapis.com:443: UNAVAILABLE: getaddrinfo: WSA Error (Unable to retrieve error string -- 11001)
+2026-03-03 13:22:43,829 [INFO] workflow.services.classifier: Classification: ADMINISTRATIF (0.30), Priorité: HAUTE, Objet: Direction Régionale de la Police Nationale du KADI...

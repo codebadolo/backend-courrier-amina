@@ -1,12 +1,16 @@
 from rest_framework import serializers
-from .models import User, Role, Permission, RolePermission
-from core.models import Service
+from .models import User, Role, Permission, RolePermission, Service
+from rest_framework.permissions import IsAuthenticated
+from core.models import Service 
 
 from rest_framework import serializers
 from django.contrib.auth import authenticate
 from .models import User
 
 class UserSerializer(serializers.ModelSerializer):
+    service = serializers.CharField(source='service.nom', read_only=True)
+    permission_classes = [IsAuthenticated]
+
     class Meta:
         model = User
         fields = [
@@ -18,6 +22,23 @@ class UserSerializer(serializers.ModelSerializer):
             "service",
             "actif",
         ]
+
+    def get_serializer_class(self):
+        if self.action == "list":
+            return UserListSerializer
+        elif self.action == "create":
+            return UserCreateSerializer
+        elif self.action in ["update", "partial_update"]:
+            return UserUpdateSerializer
+        elif self.action == "retrieve":
+            return UserDetailSerializer
+        return UserSerializer
+
+    # Optionnel : forcer la liste pour être sûr
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+        serializer = UserListSerializer(queryset, many=True)
+        return Response(serializer.data)
 
 class LoginSerializer(serializers.Serializer):
     email = serializers.EmailField()
@@ -40,9 +61,18 @@ class LoginSerializer(serializers.Serializer):
 # -------------------------
 class UserListSerializer(serializers.ModelSerializer):
     role_display = serializers.CharField(source="get_role_display", read_only=True)
-    service_name = serializers.CharField(source="service.nom", read_only=True)  # Nom du service
+    service_name = serializers.CharField(source="service.nom", read_only=True)
     full_name = serializers.SerializerMethodField()
-    
+    last_login = serializers.DateTimeField(
+        read_only=True, 
+        format='%d/%m/%Y %H:%M', 
+        allow_null=True
+    )
+    created_at = serializers.DateTimeField(
+        format='%d/%m/%Y %H:%M', 
+        read_only=True
+    )
+
     class Meta:
         model = User
         fields = [
@@ -58,6 +88,7 @@ class UserListSerializer(serializers.ModelSerializer):
             "is_staff",
             "created_at",
             "updated_at",
+            "last_login",
         ]
     
     def get_full_name(self, obj):

@@ -100,42 +100,46 @@ class CourrierGeminiService:
     def _construire_prompt_optimise(self, texte_courrier):
         # Récupérer les catégories et services disponibles
         try:
-            categories = Category.objects.values_list('name', flat=True)
-            services = Service.objects.values_list('nom', flat=True)
+            categories = list(Category.objects.values_list('name', flat=True))
+            services = list(Service.objects.values_list('nom', flat=True))
         except:
             categories = ["Administratif", "RH", "Finances", "Juridique", "Technique", "Commercial"]
-            services = ["Secrétariat Général", "Ressources Humaines", "Finances", "Juridique"]
+            services = ["Secrétariat Général", "Ressources Humaines", "Finances", "Juridique", "Service Technique", "Direction Commerciale"]
 
-        prompt = f"""Tu es un assistant spécialisé dans l'analyse de courriers administratifs. 
-    À partir du texte OCR ci-dessous, extrais les informations suivantes au format JSON strict.
+        prompt = f"""Tu es un assistant expert en analyse de courriers administratifs pour une organisation africaine.
+    Analyse le texte OCR ci-dessous et retourne UNIQUEMENT un JSON valide avec les informations suivantes.
 
     TEXTE OCR :
-    {texte_courrier[:5000]}
+    {texte_courrier[:6000]}
 
-    INFORMATIONS À EXTRAIRE :
-    - objet : le sujet principal du courrier (chaîne)
-    - expediteur_nom : nom complet de l'expéditeur (chaîne, "Non spécifié" si absent)
-    - expediteur_email : adresse email (chaîne, "Non spécifié" si absent)
-    - expediteur_telephone : numéro de téléphone (chaîne, "Non spécifié" si absent)
-    - expediteur_adresse : adresse postale (chaîne, "Non spécifié" si absent)
-    - "date : la date du document au format YYYY-MM-DD (si trouvée, sinon 'Non spécifié')"
-    - categorie_suggeree : parmi [{', '.join(categories)}] (choisis la plus pertinente)
-    - service_suggere : parmi [{', '.join(services)}] (service destinataire probable)
-    - priorite_niveau : une valeur parmi URGENTE, HAUTE, NORMALE, BASSE
-    - priorite_raison : brève justification (chaîne)
-    - confidentialite_suggestion : CONFIDENTIELLE, RESTREINTE ou NORMALE
-    - resume : résumé du document en 2-3 phrases
-    - mots_cles : liste de 5 à 10 mots-clés (liste de chaînes)
-    - confiance_categorie : score entre 0 et 1 (float)
-    - confiance_service : score entre 0 et 1 (float)
+    INSTRUCTIONS DÉTAILLÉES :
+    - **objet** : Extrais l'objet principal du courrier (titre concis)
+    - **expediteur** : Objet JSON avec nom, email, téléphone, adresse, organisation
+    - **destinataire** : Nom du destinataire si trouvé
+    - **date** : Date du document au format YYYY-MM-DD
+    - **categorie_suggeree** : Parmi [{', '.join(categories)}] (choisis la plus pertinente)
+    - **service_suggere** : Parmi [{', '.join(services)}] (service destinataire probable)
+    - **priorite_niveau** : URGENTE, HAUTE, NORMALE, ou BASSE
+    - **priorite_raison** : Brève justification (10-15 mots)
+    - **confidentialite_suggestion** : CONFIDENTIELLE, RESTREINTE, ou NORMALE
+    - **resume** : Résumé du document en 2-3 phrases (40-60 mots)
+    - **mots_cles** : Liste de 5-8 mots-clés pertinents
+    - **references** : Liste des références trouvées (numéros de dossier, etc.)
+    - **confiance_categorie** : Score entre 0 et 1
+    - **confiance_service** : Score entre 0 et 1
+    - **type_courrier** : "demande", "plainte", "information", "facture", "contrat", "autre"
 
-    FORMAT DE RÉPONSE (JSON uniquement, sans texte avant/après) :
+    FORMAT DE RÉPONSE (JSON strict, sans texte avant/après) :
     {{
         "objet": "...",
-        "expediteur_nom": "...",
-        "expediteur_email": "...",
-        "expediteur_telephone": "...",
-        "expediteur_adresse": "...",
+        "expediteur": {{
+            "nom": "...",
+            "email": "...",
+            "telephone": "...",
+            "adresse": "...",
+            "organisation": "..."
+        }},
+        "destinataire": "...",
         "date": "YYYY-MM-DD",
         "categorie_suggeree": "...",
         "service_suggere": "...",
@@ -143,18 +147,22 @@ class CourrierGeminiService:
         "priorite_raison": "...",
         "confidentialite_suggestion": "...",
         "resume": "...",
-        "mots_cles": ["..."],
+        "mots_cles": ["...", "..."],
+        "references": ["...", "..."],
         "confiance_categorie": 0.0,
-        "confiance_service": 0.0
+        "confiance_service": 0.0,
+        "type_courrier": "..."
     }}
 
-    INSTRUCTIONS :
-    - Utilise exactement les catégories et services listés.
-    - Si une information n'est pas trouvée, mets "Non spécifié" (sauf pour les listes et scores).
-    - Assure-toi que le JSON est valide et complet.
-    - Ne mets pas de commentaires en dehors du JSON.
+    RÈGLES IMPORTANTES :
+    - Utilise EXACTEMENT les catégories et services listés
+    - Si une info n'existe pas, mets une chaîne vide ou null
+    - Pour les scores de confiance, sois honnête (0.3 si incertain, 0.9 si très sûr)
+    - Le JSON doit être valide et complet
+    - Ne mets AUCUN texte avant ou après le JSON
     """
         return prompt
+    
     def _extraire_json_reponse(self, response_text):
         """Extrait et parse le JSON de la réponse Gemini"""
         try:

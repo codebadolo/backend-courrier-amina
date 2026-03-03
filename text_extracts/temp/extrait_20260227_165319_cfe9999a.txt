@@ -1,0 +1,49 @@
+================================================================================
+EXTRACTION DE TEXTE OCR - SYSTÈME DE GESTION DE COURRIER
+================================================================================
+Fichier : extrait_20260227_165319_cfe9999a.txt
+Date de création : 2026-02-27 16:53:19
+Généré automatiquement par le système
+--------------------------------------------------------------------------------
+
+[MÉTADONNÉES DU COURRIER]
+----------------------------------------
+SOURCE_FILE: Courrier1.pdf
+FILE_SIZE: 123156
+OCR_DATE: 2026-02-27T16:53:19.357249
+OCR_ENGINE: Tesseract
+LANGUAGE: fra+eng
+
+================================================================================
+[CONTENU EXTRIT PAR OCR]
+================================================================================
+
+“ … ZEPINTEL SARL CEN CM HE EGR Ia LUI
+vF mtn
+zepintel
+N°2025-0001/01/21
+Ouagadougou, le 20 Janvier 7775
+ss ANCFIS FASO Le directeur Général de Zepintel
+ose AAI \
+Souste N - =4 Monsleur le Direcleus Général
+de Sanclis Faso
+Objet : Proposition de formation Monsieur le directeur Général,
+En ce début d'année 2025, nous vous adressons nos vœux sincéres de santé. de prospérité et de succès.
+Dans ie cadre de notre portenariat, ZEPINTEL souhaite accompagner ic
+développement de l'équipe communication de SANCFIS en vous proposant
+une formation gracieuse sur l'intelligence arlificielle et les outils de productivité
+Cette session. d'une matinée, pourra être organisée à une date convenue ersembie et adaptée aux besoins spécifiques de votre Equipe.
+Nous sommes convaincus que cette initiative renforcera vos compélences
+internes et soutiendra vos objectfs stratégiques en Communication et transformation digitale,
+Dons l'attente de votre retour, nous vous prions d'agréer, Monsieur le directeur Général, l'expression de nos salutations cistinguées.
+REPINTEL SARL a
+Agence digitale _ e
+(ah mounenmimaen Directédr Général
+Scanned with
+!@ CamScanner |
+
+================================================================================
+FIN DU DOCUMENT
+Longueur : 1145 caractères
+Lignes : 23
+================================================================================

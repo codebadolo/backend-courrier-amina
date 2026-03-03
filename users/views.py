@@ -90,6 +90,7 @@ class AuthViewSet(viewsets.ViewSet):
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     permission_classes = [IsAuthenticated]
+    # serializer_class = UserSerializer  
 
     def get_serializer_class(self):
         """
@@ -101,7 +102,7 @@ class UserViewSet(viewsets.ModelViewSet):
             return UserCreateSerializer
         elif self.action in ["update", "partial_update"]:
             return UserUpdateSerializer
-        return UserDetailSerializer
+        return UserSerializer
 
     @action(detail=True, methods=["post"])
     def activate(self, request, pk=None):
