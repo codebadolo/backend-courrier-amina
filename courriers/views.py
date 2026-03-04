@@ -2035,7 +2035,7 @@ class CourrierAnalyzeAIView(APIView):
                 response_data = {
                     "texte_ocr": extracted_text,
                     "classification": gemini_result.get('classification', {
-                        "categorie_suggeree": structured_info.get('objet', 'ADMINISTRATIF'),
+                        "categorie_suggeree": structured_info.get('objet', 'Administration'),
                         "service_suggere": "Secrétariat Général",
                         "confiance_categorie": 0.3,
                         "confiance_service": 0.3

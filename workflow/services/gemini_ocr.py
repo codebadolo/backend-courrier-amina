@@ -51,6 +51,7 @@ Format de réponse : UNIQUEMENT un objet JSON valide avec deux clés : "texte" e
     "date_courrier": "YYYY-MM-DD",
     "destinataire_nom": "...",
     "categorie_suggeree": "...",
+    "service_suggeree": "...",
     "priorite_niveau": "...",
     "priorite_raison": "...",
     "mots_cles": ["...", "..."]
@@ -117,5 +118,4 @@ Format de réponse : UNIQUEMENT un objet JSON valide avec deux clés : "texte" e
         except Exception as e:
             logger.error(f"Erreur Gemini OCR: {str(e)}", exc_info=True)
             raise Exception(f"Erreur API Gemini: {str(e)}")
-    
     
