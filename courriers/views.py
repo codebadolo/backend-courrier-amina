@@ -3226,9 +3226,12 @@ logger = logging.getLogger(__name__)
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def gemini_ocr(request):
+    """
+    Vue pour extraire le texte et les informations d'un document via Gemini.
+    """
     file_obj = request.FILES.get('fichier')
     if not file_obj:
-        return Response({"error": "Aucun fichier fourni"}, status=400)
+        return Response({"error": "Aucun fichier fourni"}, status=status.HTTP_400_BAD_REQUEST)
 
     fichier_bytes = file_obj.read()
     mime_type = file_obj.content_type
@@ -3236,8 +3239,8 @@ def gemini_ocr(request):
 
     try:
         ocr = GeminiOCR()
-        texte = ocr.extraire_texte(fichier_bytes, mime_type, nom_fichier)
-        return Response({"texte": texte})
+        resultat = ocr.extraire_texte_et_infos(fichier_bytes, mime_type, nom_fichier)
+        return Response(resultat)
     except Exception as e:
         logger.error(f"Erreur Gemini OCR: {e}")
-        return Response({"error": str(e)}, status=500)
+        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
