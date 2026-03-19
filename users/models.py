@@ -1,3 +1,5 @@
+# users/models
+
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from core.models import Service
@@ -122,3 +124,10 @@ class User(AbstractBaseUser, PermissionsMixin):
     def is_agent_service(self):
         return self.role == 'agent_service'
     
+    def get_full_name(self):
+        """Retourne le nom complet de l'utilisateur."""
+        return f"{self.prenom} {self.nom}".strip()
+
+    def get_short_name(self):
+        """Retourne le prénom de l'utilisateur."""
+        return self.prenom

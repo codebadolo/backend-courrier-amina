@@ -137,6 +137,7 @@ class CourrierDetailSerializer(serializers.ModelSerializer):
     ia_suggestions_accepted = serializers.BooleanField(default=False, write_only=True, required=False)
     ia_suggestions_data = serializers.JSONField(required=False, allow_null=True)
     user_modifications = serializers.JSONField(required=False, allow_null=True)
+    traitement_statut_display = serializers.CharField(source='get_traitement_statut_display', read_only=True)
 
     
     # Relations inverses
@@ -212,7 +213,9 @@ class CourrierDetailSerializer(serializers.ModelSerializer):
             'user_modifications',
             'analyse_notes', 'analyse_date', 'analyse_par',
             'actions_requises', 'documents_necessaires',
-            'consultations', 'decision_preliminaire'
+            'consultations', 'decision_preliminaire',
+            'traitement_statut',
+            'traitement_statut_display',
             
         ]
 

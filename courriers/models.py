@@ -317,6 +317,7 @@ class ActionHistorique(models.Model):
         return f"{self.date} - {self.action}"
 
 
+
 # dans courriers/models.py ou créer templates/models.py
 
 class ModeleCourrier(models.Model):

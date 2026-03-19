@@ -1,3 +1,5 @@
+# workflow/models.py
+
 from django.db import models
 from django.conf import settings
 from courriers.models import Courrier
@@ -27,6 +29,12 @@ class WorkflowTemplate(models.Model):
     type_courrier = models.CharField(max_length=20, choices=TypeCourrier.choices)
     category = models.ForeignKey(Category, on_delete=models.CASCADE, null=True, blank=True)
     active = models.BooleanField(default=True)
+    # ── BUG 4 : champ manquant — référencé par views.py et serializers.py ──
+    steps_config = models.JSONField(
+        default=list,
+        blank=True,
+        help_text="Config des étapes : [{'label': 'Validation chef', 'role': 'chef', 'actions': ['valider']}, ...]"
+    )
     
     class Meta:
         db_table = 'workflow_template'

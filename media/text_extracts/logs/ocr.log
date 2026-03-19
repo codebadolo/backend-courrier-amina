@@ -2803,3 +2803,285 @@ violations {
 2026-03-04 10:38:28,336 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
 2026-03-04 10:57:31,095 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
 2026-03-04 10:57:52,989 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-04 11:37:41,091 [INFO] workflow.services.classifier: Classification: ADMINISTRATIF (0.30), Priorité: HAUTE, Objet: Proposition de formation...
+2026-03-04 12:18:36,291 [ERROR] workflow.services.gemini_ocr: Erreur Gemini OCR: 400 Unsupported MIME type: application/vnd.openxmlformats-officedocument.wordprocessingml.document
+Traceback (most recent call last):
+  File "C:\MesProjets\gestion_courrier\backend-courrier-amina\workflow\services\gemini_ocr.py", line 104, in extraire_texte_et_infos
+    response = self.model.generate_content([
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python312\Lib\site-packages\google\generativeai\generative_models.py", line 331, in generate_content
+    response = self._client.generate_content(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python312\Lib\site-packages\google\ai\generativelanguage_v1beta\services\generative_service\client.py", line 835, in generate_content
+    response = rpc(
+               ^^^^
+  File "C:\Python312\Lib\site-packages\google\api_core\gapic_v1\method.py", line 131, in __call__
+    return wrapped_func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python312\Lib\site-packages\google\api_core\retry\retry_unary.py", line 294, in retry_wrapped_func
+    return retry_target(
+           ^^^^^^^^^^^^^
+  File "C:\Python312\Lib\site-packages\google\api_core\retry\retry_unary.py", line 156, in retry_target
+    next_sleep = _retry_error_helper(
+                 ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python312\Lib\site-packages\google\api_core\retry\retry_base.py", line 214, in _retry_error_helper
+    raise final_exc from source_exc
+  File "C:\Python312\Lib\site-packages\google\api_core\retry\retry_unary.py", line 147, in retry_target
+    result = target()
+             ^^^^^^^^
+  File "C:\Python312\Lib\site-packages\google\api_core\timeout.py", line 130, in func_with_timeout
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python312\Lib\site-packages\google\api_core\grpc_helpers.py", line 77, in error_remapped_callable
+    raise exceptions.from_grpc_error(exc) from exc
+google.api_core.exceptions.InvalidArgument: 400 Unsupported MIME type: application/vnd.openxmlformats-officedocument.wordprocessingml.document
+2026-03-04 12:31:03,790 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-04 14:15:47,109 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-04 14:48:37,396 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-04 14:49:16,140 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-04 14:50:01,437 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-04 15:35:01,474 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-04 15:35:35,291 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-04 16:47:24,127 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-04 16:48:09,288 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-05 10:07:42,913 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-05 10:22:04,630 [INFO] workflow.services.classifier: Classification: ADMINISTRATIF (0.30), Priorité: HAUTE, Objet: Le 08.12.25...
+2026-03-05 10:42:44,351 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-05 15:11:27,466 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-05 15:19:10,180 [INFO] workflow.services.classifier: Classification: ADMINISTRATIF (0.30), Priorité: HAUTE, Objet: Prise de Fonction de la Nouvelle Direction...
+2026-03-06 09:12:36,972 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-06 09:50:20,987 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-06 09:55:23,890 [INFO] workflow.services.classifier: Classification: ADMINISTRATIF (0.30), Priorité: HAUTE, Objet: Prise de Fonction de la Nouvelle Direction...
+2026-03-06 10:09:46,946 [INFO] workflow.services.classifier: Classification: FORMATION (0.35), Priorité: BASSE, Objet: demande de stage...
+2026-03-06 10:14:11,505 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-06 10:17:46,212 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-06 10:18:23,301 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-06 10:55:36,453 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-06 12:19:56,051 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-06 12:20:59,039 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-06 12:21:51,271 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-06 12:22:33,280 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-06 12:22:54,114 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-06 12:23:15,154 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-06 12:23:40,932 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-06 12:24:06,796 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-06 12:24:45,004 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-06 12:28:09,962 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-06 12:28:31,125 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-06 12:28:51,315 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-06 12:34:52,715 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-06 12:38:15,384 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-06 12:54:38,049 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-06 13:00:44,571 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-06 13:02:38,123 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-06 13:30:26,435 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-06 14:32:30,676 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-06 14:45:03,005 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-06 14:45:33,189 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-06 14:55:17,856 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-06 15:00:10,541 [INFO] workflow.services.classifier: Classification: ADMINISTRATIF (0.30), Priorité: HAUTE, Objet: Proposition de formation...
+2026-03-06 16:30:28,627 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-06 16:31:40,428 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-06 16:39:28,260 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-06 16:56:36,483 [INFO] workflow.services.classifier: Classification: ADMINISTRATIF (0.30), Priorité: BASSE, Objet: Demande d'audience...
+2026-03-09 08:47:51,290 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-09 09:12:13,666 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-09 09:26:05,487 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-09 09:26:31,253 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-09 09:38:37,936 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-09 09:49:09,924 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-09 10:04:47,122 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-09 10:06:48,286 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-09 10:14:27,261 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-09 10:21:15,098 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-09 10:21:42,448 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-09 10:24:14,627 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-09 10:32:15,265 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-09 10:37:21,524 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-09 10:39:52,706 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-09 10:47:12,719 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-09 10:47:47,655 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-09 10:54:32,656 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-09 10:55:12,134 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-09 10:59:44,401 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-09 11:06:08,357 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-09 11:12:57,141 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-09 11:15:02,994 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-09 11:18:21,115 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-09 12:06:52,551 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-09 12:10:02,655 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-09 12:35:12,209 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-09 12:42:41,618 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-09 12:48:27,341 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-09 12:51:05,964 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-09 13:07:22,386 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-09 14:24:12,539 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-09 14:29:10,631 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-09 14:29:10,641 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-09 14:29:55,207 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-09 14:29:55,344 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-09 14:32:45,662 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-09 14:32:45,668 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-09 14:37:25,410 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-09 14:37:25,527 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-09 15:01:45,182 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-09 15:07:05,711 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-09 15:07:05,798 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-09 15:08:57,969 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-09 15:16:10,015 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-09 15:16:10,098 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-09 15:16:42,075 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-09 15:16:42,710 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-09 15:25:49,820 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-09 15:43:36,104 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-09 16:11:45,229 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-09 16:11:45,519 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-10 03:08:26,727 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-10 03:18:42,613 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-10 03:19:42,727 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-10 03:20:49,766 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-10 03:21:08,731 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-10 03:22:10,032 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-10 03:25:52,622 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-10 03:26:12,816 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-10 03:26:28,437 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-10 03:29:53,762 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-10 03:30:47,214 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-10 03:33:26,924 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-10 03:41:10,651 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-10 03:42:39,233 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-10 03:43:55,319 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-10 03:44:52,132 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-10 03:45:13,318 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-10 03:46:27,550 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-10 03:46:47,388 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-10 03:49:45,688 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-10 03:50:16,473 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-10 03:50:31,957 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-10 03:51:12,512 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-10 03:51:28,661 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-10 03:53:42,311 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-10 03:55:40,948 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-10 03:56:16,811 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-10 03:58:54,835 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-10 03:59:25,121 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-10 04:01:01,592 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-10 04:09:11,699 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-10 04:09:51,560 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-10 04:12:47,989 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-10 04:13:41,831 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-10 04:13:57,761 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-10 04:56:58,063 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-10 04:58:08,555 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-11 09:23:14,502 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-11 09:46:34,582 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-11 10:21:43,056 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-11 10:27:10,658 [INFO] workflow.services.classifier: Classification: ADMINISTRATIF (0.30), Priorité: BASSE, Objet: Demande d'audience...
+2026-03-11 10:46:39,094 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-11 11:01:55,110 [INFO] workflow.services.classifier: Classification: ADMINISTRATIF (0.30), Priorité: HAUTE, Objet: Proposition de formation...
+2026-03-11 11:46:11,225 [INFO] workflow.services.classifier: Classification: FORMATION (0.35), Priorité: BASSE, Objet: demande de stage...
+2026-03-11 11:52:06,155 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-11 11:53:17,317 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-11 11:56:32,950 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-11 11:56:39,454 [INFO] workflow.services.classifier: Classification: ADMINISTRATIF (0.30), Priorité: BASSE, Objet: Demande d'audience...
+2026-03-11 11:56:57,400 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-11 11:57:34,804 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-11 11:58:03,254 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-11 11:59:18,140 [INFO] workflow.services.classifier: Classification: ADMINISTRATIF (0.30), Priorité: HAUTE, Objet: Prise de Fonction de la Nouvelle Direction...
+2026-03-11 12:14:51,065 [INFO] workflow.services.classifier: Classification: FORMATION (0.35), Priorité: BASSE, Objet: demande de stage...
+2026-03-11 12:21:06,823 [INFO] workflow.services.classifier: Classification: ADMINISTRATIF (0.30), Priorité: HAUTE, Objet: Document administratif...
+2026-03-11 12:21:20,624 [INFO] workflow.services.classifier: Classification: ADMINISTRATIF (0.30), Priorité: HAUTE, Objet: Document administratif...
+2026-03-11 14:52:53,179 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-11 15:50:43,799 [INFO] workflow.services.classifier: Classification: ADMINISTRATIF (0.30), Priorité: BASSE, Objet: Document administratif...
+2026-03-12 04:19:15,896 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-12 09:09:31,707 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-12 09:10:16,192 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-12 09:10:52,832 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-12 09:46:37,348 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-12 09:52:12,167 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-12 12:12:41,069 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-12 12:13:58,523 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-12 12:14:48,874 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-12 12:15:03,779 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-12 12:20:02,021 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-12 16:09:37,383 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-13 08:20:54,371 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-13 09:43:14,226 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-13 09:43:34,594 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-13 09:45:48,225 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-13 10:25:08,760 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-13 10:25:49,604 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-13 10:26:09,060 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-13 10:26:50,604 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-13 10:29:17,214 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-13 10:30:20,803 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-13 10:37:13,012 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-13 10:38:47,557 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-13 10:47:57,266 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-13 10:52:27,471 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-13 10:59:38,254 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-13 11:45:14,764 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-13 11:45:51,028 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-13 11:46:06,300 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-13 11:49:22,857 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-13 11:55:54,965 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-13 11:56:19,054 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-13 12:22:10,181 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-13 12:31:46,843 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-13 12:50:23,873 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-13 12:56:08,903 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-13 13:09:16,687 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-13 13:57:20,010 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-13 13:58:37,562 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-13 14:16:10,125 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-13 14:25:58,611 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-13 14:26:31,923 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-13 14:55:51,303 [INFO] workflow.services.classifier: Classification: ADMINISTRATIF (0.30), Priorité: BASSE, Objet: Demande d'audience...
+2026-03-13 15:06:14,748 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-13 15:07:38,363 [INFO] workflow.services.classifier: Classification: ADMINISTRATIF (0.30), Priorité: HAUTE, Objet: Prise de Fonction de la Nouvelle Direction...
+2026-03-13 15:11:59,896 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-13 15:14:13,314 [INFO] workflow.services.classifier: Classification: ADMINISTRATIF (0.30), Priorité: HAUTE, Objet: Proposition de formation...
+2026-03-13 15:16:44,512 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-13 15:21:39,722 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-13 16:50:50,820 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-13 17:24:26,003 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-15 14:15:54,780 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-16 02:43:57,950 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-16 02:56:10,861 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-16 05:11:31,281 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-16 05:12:04,106 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-16 06:08:39,735 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-16 07:02:12,715 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-16 07:09:41,011 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-16 07:12:21,061 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-16 09:05:27,533 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-16 09:10:15,953 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-16 14:18:01,457 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-16 14:37:28,007 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-16 14:37:56,490 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-16 14:38:44,437 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-16 14:43:19,527 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-16 14:46:51,762 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-16 14:48:36,642 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-16 14:48:51,883 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-16 14:49:11,826 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-16 14:50:08,504 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-16 15:09:48,507 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-16 16:05:45,525 [INFO] workflow.services.classifier: Classification: ADMINISTRATIF (0.30), Priorité: BASSE, Objet: Document administratif...
+2026-03-16 16:06:09,860 [INFO] workflow.services.classifier: Classification: ADMINISTRATIF (0.30), Priorité: BASSE, Objet: Document administratif...
+2026-03-16 17:00:52,003 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-17 10:54:26,603 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-17 12:16:12,339 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-17 14:33:02,841 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-17 14:36:47,126 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-17 15:12:31,736 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-17 15:38:33,187 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-17 15:42:57,282 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-17 16:38:24,868 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-17 16:38:51,328 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-17 16:56:59,223 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-18 08:34:55,452 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-18 09:09:31,837 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-18 10:54:37,926 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-18 14:06:34,504 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès
+2026-03-19 08:59:45,220 [INFO] workflow.services.gemini_courrier_service: Service Gemini initialisé avec succès

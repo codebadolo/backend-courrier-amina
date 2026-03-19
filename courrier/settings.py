@@ -38,6 +38,7 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+    'daphne',
     'jazzmin',
     'django.contrib.admin',
     'django.contrib.auth',
@@ -57,7 +58,7 @@ INSTALLED_APPS = [
     'ia',
     'workflow',
     'dashboard',
-    
+    'channels',
 
 ]
 
@@ -89,8 +90,15 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'courrier.wsgi.application'
+# Configuration du layer (Redis recommandé pour la production) pour les WebSockets notamment pour les notifications en temps réel
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels.layers.InMemoryChannelLayer',
+    },
+}
 
+WSGI_APPLICATION = 'courrier.wsgi.application'
+ASGI_APPLICATION = 'courrier.asgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
@@ -171,6 +179,8 @@ USE_TZ = True
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
+    "http://localhost:3001",
+    "http://127.0.0.1:3001",
 ]
 
 CORS_ALLOW_CREDENTIALS = True

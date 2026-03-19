@@ -177,9 +177,8 @@ class WorkflowViewSet(viewsets.ModelViewSet):
     
     @action(detail=False, methods=['get'])
     def statistiques(self, request):
-        """Statistiques des workflows"""
         workflows = self.get_queryset()
-        
+
         stats = {
             'total_workflows': workflows.count(),
             'workflows_actifs': workflows.filter(courrier__statut__in=['recu', 'impute', 'traitement']).count(),
@@ -187,7 +186,9 @@ class WorkflowViewSet(viewsets.ModelViewSet):
             'workflows_bloques': workflows.filter(steps__statut='rejete').distinct().count(),
             'taux_achevement': 0,
             'delai_moyen': 0,
-            'etapes_en_retard': 0
+            'etapes_en_retard': 0,
+            'service_plus_actif': None,
+            'validateur_plus_actif': None,
         }
         
         # Calcul du taux d'achèvement
@@ -286,14 +287,27 @@ class WorkflowViewSet(viewsets.ModelViewSet):
             )
     
     def _notifier_prochain_validateur(self, workflow):
-        """Notifier le prochain validateur"""
+        """Notifier le prochain validateur via WebSocket (notify.py)"""
         try:
+            from courriers.notify import notify_user
             next_step = workflow.steps.get(step_number=workflow.current_step)
-            if next_step.validator and next_step.validator.email:
-                # Envoyer une notification
-                pass
+            if next_step.validator_id:
+                notify_user(
+                    user_id=next_step.validator_id,
+                    message=f"Une étape de validation vous attend : {workflow.courrier.reference} — {next_step.label}",
+                    notification_type="validation_requise",
+                    data={
+                        "courrier_id": workflow.courrier_id,
+                        "reference": workflow.courrier.reference,
+                        "workflow_id": workflow.id,
+                        "step_id": next_step.id,
+                        "step_label": next_step.label,
+                    }
+                )
         except WorkflowStep.DoesNotExist:
             pass
+        except Exception as e:
+            logger.warning(f"[Workflow] Notification impossible: {e}")
 
 
 class WorkflowStepViewSet(viewsets.ModelViewSet):
@@ -340,46 +354,58 @@ class WorkflowStepViewSet(viewsets.ModelViewSet):
         step = self.get_object()
         serializer = StepActionSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        
+
         action_type = serializer.validated_data['action']
         commentaire = serializer.validated_data.get('commentaire', '')
         nouveau_validateur = serializer.validated_data.get('nouveau_validateur')
         force = serializer.validated_data.get('force', False)
-        
+
         try:
-            # Vérifier les permissions
-            if not force and step.validator != request.user:
-                return Response(
-                    {"error": "Vous n'êtes pas autorisé à agir sur cette étape"},
-                    status=status.HTTP_403_FORBIDDEN
-                )
-            
+            # ─── Vérification des permissions ──────────────────────────────
+            if not force:
+                autorise = False
+                # 1. Validateur direct
+                if step.validator == request.user:
+                    autorise = True
+                # 2. Chef du service approbateur
+                elif step.approbateur_service and step.approbateur_service.chef == request.user:
+                    autorise = True
+                # 3. Admin ou direction
+                elif request.user.role in ['admin', 'direction']:
+                    autorise = True
+
+                if not autorise:
+                    return Response(
+                        {"error": "Vous n'êtes pas autorisé à agir sur cette étape"},
+                        status=status.HTTP_403_FORBIDDEN
+                    )
+
+            # ─── Traitement des actions ────────────────────────────────────
             if action_type == 'valider':
                 step.statut = 'valide'
                 step.commentaire = commentaire
                 step.date_action = timezone.now()
                 step.save()
-                
+
                 # Avancer le workflow si c'est l'étape courante
                 if step.step_number == step.workflow.current_step:
                     step.workflow.current_step += 1
                     step.workflow.save()
-                
+
                 message = "Étape validée"
-                
+
             elif action_type == 'rejeter':
                 step.statut = 'rejete'
                 step.commentaire = commentaire
                 step.date_action = timezone.now()
                 step.save()
-                
                 message = "Étape rejetée"
-                
+
             elif action_type == 'commenter':
                 step.commentaire = commentaire
                 step.save()
                 message = "Commentaire ajouté"
-                
+
             elif action_type == 'transferer':
                 if nouveau_validateur:
                     try:
@@ -397,7 +423,7 @@ class WorkflowStepViewSet(viewsets.ModelViewSet):
                         {"error": "Nouveau validateur requis"},
                         status=status.HTTP_400_BAD_REQUEST
                     )
-            
+
             # Enregistrer l'action
             WorkflowAction.objects.create(
                 step=step,
@@ -405,20 +431,20 @@ class WorkflowStepViewSet(viewsets.ModelViewSet):
                 action=action_type,
                 commentaire=commentaire
             )
-            
+
             return Response({
                 "message": message,
                 "step": WorkflowStepSerializer(step).data
             })
-            
+
         except Exception as e:
             logger.error(f"Erreur action étape: {str(e)}", exc_info=True)
             return Response(
                 {"error": f"Erreur action: {str(e)}"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
-    
-    @action(detail=False, methods=['get'])
+
+    @action(detail=True, methods=['get'])   # BUG 5 FIX : detail=True car self.get_object() requiert un pk
     def historique(self, request, pk=None):
         """Récupérer l'historique d'une étape"""
         step = self.get_object()
@@ -512,4 +538,3 @@ class AccuseViewSet(viewsets.ModelViewSet):
         # ...
         
         return Response({"message": "Accusé renvoyé"})
-

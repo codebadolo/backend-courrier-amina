@@ -1,3 +1,4 @@
+from .workflow_traitement import get_etape_suivante, get_etape_initiale, peut_avancer, progression_pct, build_historique_cloture
 from django.utils import timezone
 from django.db import transaction
 from django.db.models import Q, Count, Avg
@@ -13,6 +14,9 @@ from dateutil import parser
 from django.http import HttpResponse, FileResponse, Http404 
 from .utils.pdf_utils import fusionner_avec_entete
 from rest_framework.decorators import api_view, permission_classes
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync  
+from .notify import notify_user, notify_users, notify_service
 
 import io
 import tempfile
@@ -138,6 +142,12 @@ class CourrierViewSet(viewsets.ModelViewSet):
                 )
             else:
                 queryset = queryset.none()
+                
+        elif user.role == 'agent_service':
+            if user.service:
+                queryset = queryset.filter(service_actuel=user.service)
+            else:
+                queryset = queryset.none()
 
         elif user.role == 'agent_courrier':  # 🔴 CHANGÉ: agent_courrier au lieu de agent_service
         # ✅ AGENT COURRIER (secrétaire) voit:
@@ -185,10 +195,6 @@ class CourrierViewSet(viewsets.ModelViewSet):
         serializer = CourrierCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         logger.info(f"Données reçues pour creation: {request.data}")
-        
-        if not serializer.is_valid():
-            logger.error(f"Erreurs de validation: {serializer.errors}")
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         try:
             type_courrier = serializer.validated_data.get('type', 'entrant')
@@ -206,23 +212,42 @@ class CourrierViewSet(viewsets.ModelViewSet):
                 **courrier_data
             )
             
+            # ========== NOUVEAU : Sauvegarde des pièces jointes ==========
+            pieces_jointes = []
+            for fichier in request.FILES.getlist('pieces_jointes', []):
+                try:
+                    pj = PieceJointe.objects.create(
+                        courrier=courrier,
+                        fichier=fichier,
+                        uploaded_by=request.user
+                    )
+                    pieces_jointes.append(pj)
+                except Exception as e:
+                    logger.error(f"Erreur sauvegarde pièce jointe {fichier.name}: {str(e)}")
+            # ========== FIN NOUVEAU ==========
+            
             if ocr_enabled:
                 from workflow.services.gemini_ocr import GeminiOCR
+                import mimetypes
                 gemini = GeminiOCR()
                 texte_ocr_global = ""
-                for fichier in request.FILES.getlist('pieces_jointes', []):
+                for pj in pieces_jointes:
                     try:
-                        fichier_bytes = fichier.read()
-                        mime_type = fichier.content_type
-                        texte = gemini.extraire_texte(fichier_bytes, mime_type, fichier.name)
+                        with open(pj.fichier.path, 'rb') as f:
+                            fichier_bytes = f.read()
+                        mime_type = mimetypes.guess_type(pj.fichier.name)[0] or 'application/octet-stream'
+                        # ── BUG 1 CORRIGÉ ──────────────────────────────────────────────
+                        # La méthode s'appelle extraire_texte_et_infos(), pas extraire_texte()
+                        # Elle retourne un dict : { 'texte': '...', 'infos': {...}, ... }
+                        resultat = gemini.extraire_texte_et_infos(fichier_bytes, mime_type, pj.fichier.name)
+                        texte = resultat.get('texte') or resultat.get('contenu_texte', '') if isinstance(resultat, dict) else str(resultat)
                         if texte:
-                            texte_ocr_global += f"\n--- {fichier.name} ---\n{texte}\n"
+                            texte_ocr_global += f"\n--- {pj.fichier.name} ---\n{texte}\n"
                     except Exception as e:
-                        logger.error(f"Erreur Gemini OCR pour {fichier.name}: {str(e)}")
-
-            if texte_ocr_global:
-                courrier.contenu_texte = texte_ocr_global
-                courrier.save(update_fields=['contenu_texte'])
+                        logger.error(f"Erreur Gemini OCR pour {pj.fichier.name}: {str(e)}")
+                if texte_ocr_global:
+                    courrier.contenu_texte = texte_ocr_global
+                    courrier.save(update_fields=['contenu_texte'])
             
             if classifier_enabled:
                 self._process_classification_ia(courrier, request.user)
@@ -248,6 +273,7 @@ class CourrierViewSet(viewsets.ModelViewSet):
                 {"error": f"Erreur création: {str(e)}"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+    
     
     @action(detail=True, methods=['post'])
     def imputer(self, request, pk=None):
@@ -279,6 +305,15 @@ class CourrierViewSet(viewsets.ModelViewSet):
                 action="IMPUTATION",
                 commentaire=f"Imputé au service {service.nom}"
             )
+            
+            # ── NOTIFICATION : alerter le chef du service imputé ──────────
+            if service.chef_id:
+                notify_user(
+                    user_id=service.chef_id,
+                    message=f"Nouveau courrier imputé à votre service : {courrier.reference}",
+                    notification_type="nouveau_courrier",
+                    data={"courrier_id": courrier.id, "reference": courrier.reference, "objet": courrier.objet}
+                )
             
             return Response(
                 {"message": "Courrier imputé avec succès", "imputation": ImputationSerializer(imputation).data},
@@ -344,6 +379,117 @@ class CourrierViewSet(viewsets.ModelViewSet):
         serializer = CourrierStatsSerializer(stats)
         return Response(serializer.data)
     
+
+    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
+    def enregistrer_instruction(self, request, pk=None):
+        """Enregistrer les données de l'instruction"""
+        courrier = self.get_object()
+        
+        # Logs pour déboguer
+        logger.info(f"Instruction reçue pour courrier {courrier.id}")
+        logger.info(f"statut_instruction = {request.data.get('statut_instruction')}")
+        logger.info(f"Ancien traitement_statut = {courrier.traitement_statut}")
+        
+        courrier.actions_requises = request.data.get('actions_requises', [])
+        courrier.documents_necessaires = request.data.get('documents_necessaires', [])
+        courrier.notes_instruction = request.data.get('notes_instruction', '')
+        courrier.consultations = request.data.get('consultations', [])
+        
+        if request.data.get('statut_instruction') == 'terminee':
+            courrier.traitement_statut = 'redaction'
+        
+        courrier.save()
+        
+        logger.info(f"Nouveau traitement_statut = {courrier.traitement_statut}")
+        
+        ActionHistorique.objects.create(
+            courrier=courrier,
+            user=request.user,
+            action="INSTRUCTION",
+            commentaire="Instruction mise à jour"
+        )
+        
+        return Response({
+            "message": "Instruction enregistrée",
+            "courrier": CourrierDetailSerializer(courrier, context={'request': request}).data
+        })
+    
+
+    # courriers/views.py (ajout dans CourrierViewSet)
+
+    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
+    def repondre_courrier(self, request, pk=None):
+        """Permet de répondre à un courrier entrant et éventuellement de transmettre"""
+        courrier = self.get_object()
+        user = request.user
+
+        if courrier.type != 'entrant':
+            return Response({"error": "Ce courrier n'est pas un courrier entrant."}, status=400)
+
+        reponse_texte = request.data.get('reponse_texte')
+        destinataire_type = request.data.get('destinataire_type')  # 'expediteur' ou 'autre'
+        destinataire_id = request.data.get('destinataire_id')
+        commentaire = request.data.get('commentaire', '')
+
+        if not reponse_texte:
+            return Response({"error": "Le texte de réponse est requis."}, status=400)
+
+        with transaction.atomic():
+            # Créer la réponse (courrier sortant lié)
+            reponse = CourrierReponse.objects.create(
+                courrier_origine=courrier,
+                type_reponse='email',
+                objet=f"RE: {courrier.objet}",
+                contenu=reponse_texte,
+                destinataires=[],
+                redacteur=user,
+                statut='brouillon'
+            )
+
+            # Mettre à jour le statut du courrier original
+            courrier.statut = 'traitement'  # ou 'repondu' selon le workflow
+            courrier.save()
+
+            ActionHistorique.objects.create(
+                courrier=courrier,
+                user=user,
+                action="REPONSE_CREEE",
+                commentaire="Réponse créée depuis la page détail"
+            )
+
+            if destinataire_type == 'autre' and destinataire_id:
+                try:
+                    destinataire = User.objects.get(id=destinataire_id, actif=True)
+                    # Ici, vous pouvez utiliser l'action envoyer_a si elle existe
+                    # Par exemple, on pourrait créer une transmission
+                    courrier.responsable_actuel = destinataire
+                    courrier.service_actuel = destinataire.service
+                    courrier.save()
+                    ActionHistorique.objects.create(
+                        courrier=courrier,
+                        user=user,
+                        action="TRANSMISSION",
+                        commentaire=f"Transmis à {destinataire.get_full_name()}"
+                    )
+                    # ── NOTIFICATION : alerter le destinataire ─────────────
+                    notify_user(
+                        user_id=destinataire.id,
+                        message=f"Un courrier vous a été transmis : {courrier.reference}",
+                        notification_type="courrier_assigne",
+                        data={"courrier_id": courrier.id, "reference": courrier.reference, "objet": courrier.objet,
+                              "expediteur": user.get_full_name()}
+                    )
+                except User.DoesNotExist:
+                    return Response({"error": "Destinataire non trouvé."}, status=404)
+
+            serializer = CourrierDetailSerializer(courrier, context={'request': request})
+            return Response({
+                "message": "Réponse créée avec succès.",
+                "courrier": serializer.data,
+                "reponse_id": reponse.id
+            })
+
+
     @action(detail=False, methods=['post'])
     def import_csv(self, request):
         serializer = ImportCourrierSerializer(data=request.data)
@@ -767,7 +913,13 @@ class CourrierViewSet(viewsets.ModelViewSet):
         
         # Vérifier les permissions
         user = request.user
-        if user.role not in ['chef', 'direction', 'admin', 'agent_service']:
+        # L'agent traitant peut toujours démarrer l'analyse sur son courrier
+        est_agent_traitant = (
+            courrier.agent_traitant == user or
+            courrier.responsable_actuel == user
+        )
+        peut_analyser = user.role in ['chef', 'direction', 'admin', 'agent_service', 'collaborateur'] or est_agent_traitant
+        if not peut_analyser:
             return Response(
                 {"error": "Vous n'êtes pas autorisé à analyser ce courrier"},
                 status=status.HTTP_403_FORBIDDEN
@@ -803,8 +955,330 @@ class CourrierViewSet(viewsets.ModelViewSet):
             "courrier": CourrierDetailSerializer(courrier, context={'request': request}).data
         })
 
+    @action(detail=True, methods=['post'], url_path='rediger-reponse')
+    def rediger_reponse(self, request, pk=None):
+        try:
+            with transaction.atomic():
+                courrier = self.get_object()
+                user = request.user
+
+                # Vérification des permissions
+                est_agent_traitant = (courrier.agent_traitant == user or courrier.responsable_actuel == user)
+                peut_rediger = user.role in ['admin', 'direction', 'chef', 'agent_service', 'collaborateur'] or est_agent_traitant
+                if not peut_rediger:
+                    return Response(
+                        {"error": "Vous n'avez pas la permission de rédiger une réponse"},
+                        status=status.HTTP_403_FORBIDDEN
+                    )
+
+                # Validation des données
+                required_fields = ['type_reponse', 'objet', 'contenu', 'destinataires']
+                for field in required_fields:
+                    if field not in request.data:
+                        return Response(
+                            {"error": f"Le champ {field} est requis"},
+                            status=status.HTTP_400_BAD_REQUEST
+                        )
+
+                # Création de la réponse
+                reponse = CourrierReponse.objects.create(
+                    courrier_origine=courrier,
+                    type_reponse=request.data['type_reponse'],
+                    objet=request.data['objet'],
+                    contenu=request.data['contenu'],
+                    destinataires=request.data['destinataires'],
+                    copies=request.data.get('copies', []),
+                    canal_envoi=request.data.get('canal_envoi', 'email'),
+                    redacteur=user,
+                    statut='brouillon',
+                    pieces_jointes_reponse=request.data.get('pieces_jointes', [])
+                )
+
+                # Association au courrier
+                courrier.traitement_statut = TraitementStatus.REDACTION
+                courrier.reponse_associee = reponse
+                courrier.save()
+
+                # Création de l'étape de traitement
+                TraitementEtape.objects.create(
+                    courrier=courrier,
+                    type_etape='redaction',
+                    agent=user,
+                    description="Rédaction de la réponse",
+                    commentaire=f"Type: {request.data['type_reponse']}",
+                    statut='termine',
+                    date_fin=timezone.now()
+                )
+
+                # Réponse avec le courrier mis à jour
+                serializer = CourrierDetailSerializer(courrier, context={'request': request})
+                return Response({
+                    "message": "Réponse rédigée avec succès",
+                    "reponse_id": str(reponse.id),
+                    "reponse_reference": reponse.reference,
+                    "courrier": serializer.data
+                })
+
+        except Courrier.DoesNotExist:
+            return Response({"error": "Courrier non trouvé"}, status=404)
+        except Exception as e:
+            logger.error(f"Erreur rédaction réponse: {str(e)}")
+            return Response({"error": "Erreur lors de la rédaction"}, status=500)
+    # Dans la classe CourrierViewSet, ajoutez ces méthodes :
+
+    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
+    def soumettre_validation(self, request, pk=None):
+        courrier = self.get_object()
+        courrier.traitement_statut = 'validation'
+        courrier.besoin_validation = True
+        courrier.save()
+
+        # Calculer le prochain ordre disponible
+        from django.db.models import Max
+        max_ordre = courrier.validations.aggregate(Max('ordre'))['ordre__max'] or 0
+        nouvel_ordre = max_ordre + 1
+
+        # Créer la validation avec l'ordre calculé
+        validation = ValidationCourrier.objects.create(
+            courrier=courrier,
+            type_validation='hierarchique',
+            validateur=courrier.service_impute.chef if courrier.service_impute else None,
+            ordre=nouvel_ordre,
+            statut='en_attente',
+            commentaire=request.data.get('commentaire', '')
+        )
+
+        serializer = CourrierDetailSerializer(courrier, context={'request': request})
+        return Response({
+            "message": "Courrier soumis pour validation",
+            "courrier": serializer.data,
+            "validation_id": str(validation.id)
+        })
+
+    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
+    def valider(self, request, pk=None):
+        """Valider ou rejeter une validation"""
+        courrier = self.get_object()
+        validation_id = request.data.get('validation_id')
+        action = request.data.get('action', 'valider')  # 'valider' ou 'rejeter'
+        commentaire = request.data.get('commentaire', '')
+
+        try:
+            if validation_id:
+                validation = ValidationCourrier.objects.get(id=validation_id, courrier=courrier)
+                # Vérifier que l'utilisateur est le validateur
+                if validation.validateur != request.user:
+                    return Response(
+                        {"error": "Vous n'êtes pas autorisé à valider ce courrier"},
+                        status=status.HTTP_403_FORBIDDEN
+                    )
+                validation.statut = 'valide' if action == 'valider' else 'rejete'
+                validation.commentaire = commentaire
+                validation.date_action = timezone.now()
+                validation.save()
+            else:
+                # Si pas de validation_id, on considère que c'est une validation simple (ex: visa)
+                # À adapter selon votre logique
+                pass
+
+            if action == 'valider':
+                # Gérer les niveaux de validation si nécessaire
+                if courrier.niveau_validation_requis and courrier.niveau_validation_atteint < courrier.niveau_validation_requis:
+                    courrier.niveau_validation_atteint += 1
+                    if courrier.niveau_validation_atteint >= courrier.niveau_validation_requis:
+                        courrier.traitement_statut = TraitementStatus.SIGNATURE
+                else:
+                    courrier.traitement_statut = TraitementStatus.SIGNATURE
+                message_success = "Validation approuvée"
+            else:  # rejeter
+                courrier.traitement_statut = TraitementStatus.REDACTION
+                message_success = "Validation rejetée, retour à la rédaction"
+
+            courrier.save()
+
+            ActionHistorique.objects.create(
+                courrier=courrier,
+                user=request.user,
+                action=f"VALIDATION_{'APPROUVEE' if action == 'valider' else 'REJETEE'}",
+                commentaire=commentaire
+            )
+
+            return Response({
+                "message": message_success,
+                "courrier": CourrierDetailSerializer(courrier, context={'request': request}).data
+            })
+
+        except ValidationCourrier.DoesNotExist:
+            return Response({"error": "Validation non trouvée"}, status=404)
+        except Exception as e:
+            logger.error(f"Erreur validation: {str(e)}")
+            return Response({"error": str(e)}, status=500)
+    
+    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
+    def signer(self, request, pk=None):
+        """Signer électroniquement un courrier"""
+        courrier = self.get_object()
+        user = request.user
+
+        # ── Permissions : agent traitant OU chef / direction / admin ────────
+        est_agent_traitant = (
+            courrier.agent_traitant == user or
+            courrier.responsable_actuel == user
+        )
+        peut_signer = user.role in ['chef', 'direction', 'admin'] or est_agent_traitant
+        if not peut_signer:
+            return Response(
+                {"error": "Vous n'êtes pas autorisé à signer ce courrier"},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        # ── Statut : accepter 'signature' ET 'validation' (transition souple) 
+        statuts_autorises = ['signature', 'validation', 'redaction']
+        if courrier.traitement_statut not in statuts_autorises:
+            return Response(
+                {"error": f"Ce courrier n'est pas prêt pour la signature (statut actuel : {courrier.traitement_statut})"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        with transaction.atomic():
+            # Calculer le prochain ordre disponible
+            from django.db.models import Max
+            max_ordre = courrier.validations.aggregate(Max('ordre'))['ordre__max'] or 0
+            nouvel_ordre = max_ordre + 1
+
+            # Créer une validation de signature
+            validation = ValidationCourrier.objects.create(
+                courrier=courrier,
+                type_validation='signature',
+                validateur=user,
+                ordre=nouvel_ordre,
+                statut='signe',
+                date_action=timezone.now(),
+                signature_data=request.data.get('signature_data', {}),
+                commentaire=request.data.get('commentaire', 'Signature électronique')
+            )
+
+            # Mettre à jour le statut
+            courrier.traitement_statut = 'envoi'
+            courrier.save()
+
+            # Créer une étape de traitement
+            TraitementEtape.objects.create(
+                courrier=courrier,
+                type_etape='signature',
+                agent=user,
+                description="Signature électronique",
+                commentaire=request.data.get('commentaire', ''),
+                statut='termine',
+                date_fin=timezone.now()
+            )
+
+            ActionHistorique.objects.create(
+                courrier=courrier,
+                user=user,
+                action="SIGNATURE",
+                commentaire="Courrier signé électroniquement"
+            )
+
+            serializer = CourrierDetailSerializer(courrier, context={'request': request})
+            return Response({
+                "success": True,
+                "message": "Courrier signé avec succès",
+                "validation_id": str(validation.id),
+                "courrier": serializer.data
+            })
+    
+    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
+    def envoyer(self, request, pk=None):
+        """Marquer un courrier comme envoyé"""
+        courrier = self.get_object()
+        user = request.user
+        
+        try:
+            courrier.traitement_statut = TraitementStatus.CLOTURE
+            courrier.statut = 'envoye'
+            courrier.date_envoi = timezone.now().date()
+            courrier.date_fin_traitement = timezone.now()
+            courrier.date_cloture = timezone.now().date()
+            courrier.save()
+            
+            ActionHistorique.objects.create(
+                courrier=courrier,
+                user=user,
+                action="ENVOI",
+                commentaire="Courrier envoyé"
+            )
+            
+            return Response({
+                "message": "Courrier marqué comme envoyé avec succès"
+            })
+            
+        except Exception as e:
+            logger.error(f"Erreur envoi: {str(e)}")
+            return Response(
+                {"error": str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated], url_path='cloturer-directement')
+    def cloturer_directement(self, request, pk=None):
+        """
+        Clôturer un courrier directement depuis n'importe quelle étape du traitement.
+        Utile pour les courriers internes ou simples ne nécessitant pas le circuit complet.
+        """
+        courrier = self.get_object()
+        user = request.user
+
+        # Vérifier que l'utilisateur est bien l'agent traitant ou un supérieur
+        est_agent = (courrier.agent_traitant == user or courrier.responsable_actuel == user)
+        peut_cloturer = user.role in ['admin', 'direction', 'chef'] or est_agent
+        if not peut_cloturer:
+            return Response(
+                {"error": "Vous n'êtes pas autorisé à clôturer ce courrier"},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        commentaire = request.data.get('commentaire', 'Traitement clôturé directement')
+
+        with transaction.atomic():
+            courrier.traitement_statut = TraitementStatus.CLOTURE
+            courrier.statut = 'repondu'
+            courrier.date_fin_traitement = timezone.now()
+            courrier.date_cloture = timezone.now().date()
+            courrier.save()
+
+            # Terminer toute étape en cours
+            from .models import TraitementEtape
+            TraitementEtape.objects.filter(
+                courrier=courrier,
+                statut__in=['en_cours', 'en_attente']
+            ).update(statut='termine', date_fin=timezone.now())
+
+            ActionHistorique.objects.create(
+                courrier=courrier,
+                user=user,
+                action="CLOTURE_DIRECTE",
+                commentaire=commentaire
+            )
+
+            # Notifier le chef du service
+            from courriers.notify import notify_user
+            if courrier.service_actuel and courrier.service_actuel.chef_id:
+                notify_user(
+                    user_id=courrier.service_actuel.chef_id,
+                    message=f"Le courrier {courrier.reference} a été clôturé par {user.get_full_name()}",
+                    notification_type="courrier_cloture",
+                    data={"courrier_id": courrier.id, "reference": courrier.reference}
+                )
+
+        return Response({
+            "message": "Courrier clôturé avec succès",
+            "courrier": CourrierDetailSerializer(courrier, context={'request': request}).data
+        })
+
     @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
     def enregistrer_analyse(self, request, pk=None):
+
         """Enregistrer les résultats de l'analyse"""
         courrier = self.get_object()
         
@@ -862,761 +1336,529 @@ class CourrierViewSet(viewsets.ModelViewSet):
             "courrier": CourrierDetailSerializer(courrier, context={'request': request}).data
         })
 
+    # courriers/views.py
     @action(detail=True, methods=['get'], permission_classes=[IsAuthenticated])
     def services_consultables(self, request, pk=None):
         """Liste des services qui peuvent être consultés"""
         courrier = self.get_object()
-        
-        services = Service.objects.exclude(id=courrier.service_actuel.id).values(
-            'id', 'nom', 'description'
-        ).annotate(
-            consultations_anterieures=Count(
-                'service_consulte',
-                filter=Q(service_consulte__courrier=courrier)
-            )
-        )
-        
+        if courrier.service_actuel:
+            services = Service.objects.exclude(id=courrier.service_actuel.id).values('id', 'nom', 'description')
+        else:
+            services = Service.objects.all().values('id', 'nom', 'description')
         return Response(list(services))
 
-    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
-    def consulter_service(self, request, pk=None):
-        """Demander l'avis d'un autre service"""
-        courrier = self.get_object()
-        service_id = request.data.get('service_id')
-        motif = request.data.get('motif', '')
-        urgence = request.data.get('urgence', False)
-        
-        if not service_id:
-            return Response({"error": "Service ID requis"}, status=400)
-        
-        try:
-            service = Service.objects.get(id=service_id)
-        except Service.DoesNotExist:
-            return Response({"error": "Service non trouvé"}, status=404)
-        
-        # Créer la consultation
-        consultation = {
-            'id': str(uuid.uuid4()),
-            'service_id': service.id,
-            'service_nom': service.nom,
-            'motif': motif,
-            'date_demande': timezone.now().isoformat(),
-            'demandeur_id': request.user.id,
-            'demandeur_nom': request.user.get_full_name(),
-            'statut': 'en_attente',
-            'urgence': urgence,
-            'reponse': None,
-            'date_reponse': None
-        }
-        
-        # Ajouter aux consultations existantes
-        consultations = courrier.consultations or []
-        consultations.append(consultation)
-        courrier.consultations = consultations
-        courrier.save()
-        
-        return Response({
-            "message": f"Demande d'avis envoyée au service {service.nom}",
-            "consultation": consultation
-        })
-    
-    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
-    def enregistrer_instruction(self, request, pk=None):
-        """
-        Enregistrer les données de l'instruction
-        """
-        courrier = self.get_object()
-        
-        courrier.actions_requises = request.data.get('actions_requises', [])
-        courrier.documents_necessaires = request.data.get('documents_necessaires', [])
-        courrier.notes_instruction = request.data.get('notes_instruction', '')
-        courrier.consultations = request.data.get('consultations', [])
-        
-        if request.data.get('statut_instruction') == 'terminee':
-            courrier.traitement_statut = 'redaction'
-        
-        courrier.save()
-        
-        ActionHistorique.objects.create(
-            courrier=courrier,
-            user=request.user,
-            action="INSTRUCTION",
-            commentaire="Instruction mise à jour"
-        )
-        
-        return Response({
-            "message": "Instruction enregistrée",
-            "courrier": CourrierDetailSerializer(courrier).data
-    })
-
-    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
-    def signer(self, request, pk=None):
-        """
-        Signer électroniquement un courrier
-        """
-        try:
-            courrier = self.get_object()
-            user = request.user
-            
-            # Vérifier que le courrier existe
-            if not courrier:
-                return Response(
-                    {"error": "Courrier non trouvé"},
-                    status=status.HTTP_404_NOT_FOUND
-                )
-            
-            # Vérifier les permissions
-            if user.role not in ['chef', 'direction', 'admin']:
-                return Response(
-                    {"error": "Vous n'êtes pas autorisé à signer ce courrier"},
-                    status=status.HTTP_403_FORBIDDEN
-                )
-            
-            # Log pour déboguer
-            logger.info(f"Tentative de signature - Courrier {courrier.id}")
-            logger.info(f"  - Statut: {courrier.statut}")
-            logger.info(f"  - Traitement statut: {courrier.traitement_statut}")
-            logger.info(f"  - Type: {courrier.type}")
-            
-            # Si le traitement_statut est null ou vide, on le définit
-            if not courrier.traitement_statut:
-                courrier.traitement_statut = 'redaction'
-                courrier.save()
-                logger.info(f"  → Traitement statut initialisé à 'redaction'")
-            
-            # STATUTS AUTORISÉS POUR LA SIGNATURE
-            statuts_autorises = [
-                'validation', 'signature', 'en_validation', 
-                'redaction', 'brouillon', 'en_cours', 'termine',
-                'prise_en_charge', 'analyse', 'instruction'
-            ]
-            
-            # Vérifier que le courrier peut être signé
-            if courrier.traitement_statut not in statuts_autorises:
-                return Response(
-                    {
-                        "error": "Ce courrier n'est pas prêt pour la signature",
-                        "statut_actuel": courrier.traitement_statut,
-                        "statuts_autorises": statuts_autorises
-                    },
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-            
-            with transaction.atomic():
-                # Créer une validation de signature
-                validation = ValidationCourrier.objects.create(
-                    courrier=courrier,
-                    type_validation='signature',
-                    validateur=user,
-                    statut='signe',
-                    date_action=timezone.now(),
-                    signature_data=request.data.get('signature_data', {}),
-                    commentaire=request.data.get('commentaire', 'Signature électronique')
-                )
-                
-                # Mettre à jour les statuts
-                courrier.traitement_statut = 'envoi'  # Prêt à être envoyé
-                courrier.statut = 'traitement'  # Ou 'valide' selon votre besoin
-                courrier.save()
-                
-                # Créer une étape de traitement (avec gestion d'erreur)
-                try:
-                    TraitementEtape.objects.create(
-                        courrier=courrier,
-                        type_etape='signature',
-                        agent=user,
-                        description="Signature électronique",
-                        commentaire=request.data.get('commentaire', ''),
-                        statut='termine',
-                        date_fin=timezone.now()
-                    )
-                except Exception as e:
-                    logger.warning(f"Impossible de créer l'étape de traitement: {e}")
-                
-                # Journaliser
-                ActionHistorique.objects.create(
-                    courrier=courrier,
-                    user=user,
-                    action="SIGNATURE",
-                    commentaire="Courrier signé électroniquement"
-                )
-                
-                # Sérialiser le courrier pour la réponse
-                serializer = CourrierDetailSerializer(courrier, context={'request': request})
-                
-                return Response({
-                    "success": True,
-                    "message": "Courrier signé avec succès",
-                    "validation_id": str(validation.id),
-                    "courrier": serializer.data
-                })
-                
-        except Courrier.DoesNotExist:
-            return Response(
-                {"error": "Courrier non trouvé"},
-                status=status.HTTP_404_NOT_FOUND
-            )
-        except Exception as e:
-            logger.error(f"Erreur signature: {str(e)}", exc_info=True)
-            return Response(
-                {"error": f"Erreur lors de la signature: {str(e)}"},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
-
-    # Dans courriers/views.py - Classe CourrierViewSet
-
-# Dans courriers/views.py - Classe CourrierViewSet
-
-    @action(detail=True, methods=['get'], permission_classes=[IsAuthenticated])
-    def membres_service(self, request, pk=None):
-        """
-        Liste les membres du service du courrier (agents et collaborateurs)
-        """
-        try:
-            courrier = self.get_object()
-            user = request.user
-            
-            # Vérifier que l'utilisateur est chef du service
-            if user.role != 'chef' or user.service != courrier.service_actuel:
-                return Response(
-                    {"error": "Vous n'êtes pas autorisé à voir les membres de ce service"},
-                    status=status.HTTP_403_FORBIDDEN
-                )
-            
-            # Récupérer les membres du service
-            from django.contrib.auth import get_user_model
-            User = get_user_model()
-            
-            membres = User.objects.filter(
-                service=courrier.service_actuel,
-                actif=True
-            ).values(
-                'id', 'prenom', 'nom', 'email', 'role'
-            ).order_by('role', 'prenom', 'nom')
-            
-            # Séparer par rôle pour faciliter l'affichage
-            collaborateurs = [m for m in membres if m['role'] == 'collaborateur']
-            agents = [m for m in membres if m['role'] == 'agent_service']
-            
-            return Response({
-                'courrier': {
-                    'id': courrier.id,
-                    'reference': courrier.reference,
-                    'objet': courrier.objet,
-                    'service': courrier.service_actuel.nom if courrier.service_actuel else None
-                },
-                'collaborateurs': collaborateurs,
-                'agents': agents,
-                'total': len(membres)
-            })
-            
-        except Exception as e:
-            logger.error(f"Erreur membres_service: {str(e)}")
-            return Response(
-                {"error": str(e)},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
-
-
-    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
-    def affecter_membre(self, request, pk=None):
-        """
-        Affecte un courrier à un collaborateur ou agent du service
-        """
-        try:
-            with transaction.atomic():
+        @action(detail=True, methods=['get'], permission_classes=[IsAuthenticated])
+        def membres_service(self, request, pk=None):
+            """
+            Liste les membres du service du courrier (agents et collaborateurs)
+            """
+            try:
                 courrier = self.get_object()
                 user = request.user
-                membre_id = request.data.get('membre_id')
-                commentaire = request.data.get('commentaire', '')
-                instructions = request.data.get('instructions', '')
-                delai_jours = request.data.get('delai_jours', 5)
-                
-                # Vérifications
-                if not membre_id:
-                    return Response(
-                        {"error": "L'ID du membre est requis"},
-                        status=status.HTTP_400_BAD_REQUEST
-                    )
                 
                 # Vérifier que l'utilisateur est chef du service
                 if user.role != 'chef' or user.service != courrier.service_actuel:
                     return Response(
-                        {"error": "Vous n'êtes pas autorisé à affecter ce courrier"},
+                        {"error": "Vous n'êtes pas autorisé à voir les membres de ce service"},
                         status=status.HTTP_403_FORBIDDEN
                     )
                 
-                # Récupérer le membre
+                # Récupérer les membres du service
                 from django.contrib.auth import get_user_model
                 User = get_user_model()
                 
-                try:
-                    membre = User.objects.get(
-                        id=membre_id,
-                        service=courrier.service_actuel,
-                        role__in=['collaborateur', 'agent_service'],
-                        actif=True
-                    )
-                except User.DoesNotExist:
-                    return Response(
-                        {"error": "Membre non trouvé dans ce service"},
-                        status=status.HTTP_404_NOT_FOUND
-                    )
+                membres = User.objects.filter(
+                    service=courrier.service_actuel,
+                    actif=True
+                ).values(
+                    'id', 'prenom', 'nom', 'email', 'role'
+                ).order_by('role', 'prenom', 'nom')
                 
-                # Affecter le courrier
-                courrier.responsable_actuel = membre
-                courrier.agent_traitant = membre
-                courrier.statut = 'traitement'
-                courrier.traitement_statut = 'prise_en_charge'
-                courrier.delai_traitement_jours = delai_jours
-                
-                # Recalculer la date d'échéance
-                if delai_jours and courrier.date_reception:
-                    courrier.date_echeance = courrier.date_reception + timedelta(days=delai_jours)
-                
-                courrier.save()
-                
-                # Créer une instruction
-                if instructions:
-                    InstructionCourrier.objects.create(
-                        courrier=courrier,
-                        type_instruction='assignation',
-                        instruction=instructions,
-                        agent_assignee=membre,
-                        date_echeance=courrier.date_echeance,
-                        statut='en_attente'
-                    )
-                
-                # Créer une étape de traitement
-                TraitementEtape.objects.create(
-                    courrier=courrier,
-                    type_etape='prise_en_charge',
-                    agent=membre,
-                    description=f"Affecté par {user.get_full_name()}",
-                    commentaire=commentaire,
-                    statut='en_cours',
-                    date_debut=timezone.now()
-                )
-                
-                # Journaliser
-                ActionHistorique.objects.create(
-                    courrier=courrier,
-                    user=user,
-                    action="AFFECTATION_MEMBRE",
-                    commentaire=f"Affecté à {membre.get_full_name()} ({membre.role})"
-                )
-                
-                serializer = CourrierDetailSerializer(courrier, context={'request': request})
+                # Séparer par rôle pour faciliter l'affichage
+                collaborateurs = [m for m in membres if m['role'] == 'collaborateur']
+                agents = [m for m in membres if m['role'] == 'agent_service']
                 
                 return Response({
-                    "success": True,
-                    "message": f"Courrier affecté à {membre.get_full_name()}",
-                    "courrier": serializer.data
+                    'courrier': {
+                        'id': courrier.id,
+                        'reference': courrier.reference,
+                        'objet': courrier.objet,
+                        'service': courrier.service_actuel.nom if courrier.service_actuel else None
+                    },
+                    'collaborateurs': collaborateurs,
+                    'agents': agents,
+                    'total': len(membres)
                 })
                 
-        except Exception as e:
-            logger.error(f"Erreur affectation membre: {str(e)}")
-            return Response(
-                {"error": str(e)},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
-
-
-    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
-    def traiter_courrier(self, request, pk=None):
-        """
-        Marquer un courrier comme traité (pour les agents/collaborateurs)
-        """
-        try:
-            courrier = self.get_object()
-            user = request.user
-            reponse = request.data.get('reponse', '')
-            commentaire = request.data.get('commentaire', '')
-            
-            # Vérifier que l'utilisateur est bien le responsable
-            if courrier.responsable_actuel != user:
+            except Exception as e:
+                logger.error(f"Erreur membres_service: {str(e)}")
                 return Response(
-                    {"error": "Vous n'êtes pas le responsable de ce courrier"},
-                    status=status.HTTP_403_FORBIDDEN
+                    {"error": str(e)},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
                 )
-            
-            with transaction.atomic():
-                # Mettre à jour le statut
-                courrier.statut = 'repondu'
-                courrier.traitement_statut = 'termine'
-                courrier.date_fin_traitement = timezone.now()
-                courrier.date_cloture = timezone.now().date()
-                
-                # Sauvegarder la réponse si fournie
-                if reponse:
-                    # Créer une réponse associée
-                    reponse_obj = CourrierReponse.objects.create(
-                        courrier_origine=courrier,
-                        type_reponse='email',
-                        objet=f"RE: {courrier.objet}",
-                        contenu=reponse,
-                        destinataires=[courrier.expediteur_email] if courrier.expediteur_email else [],
-                        redacteur=user,
-                        statut='envoye'
+
+
+        @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
+        def affecter_membre(self, request, pk=None):
+            """
+            Affecte un courrier à un collaborateur ou agent du service
+            """
+            try:
+                with transaction.atomic():
+                    courrier = self.get_object()
+                    user = request.user
+                    membre_id = request.data.get('membre_id')
+                    commentaire = request.data.get('commentaire', '')
+                    instructions = request.data.get('instructions', '')
+                    delai_jours = request.data.get('delai_jours', 5)
+                    
+                    # Vérifications
+                    if not membre_id:
+                        return Response(
+                            {"error": "L'ID du membre est requis"},
+                            status=status.HTTP_400_BAD_REQUEST
+                        )
+                    
+                    # Vérifier que l'utilisateur est chef du service
+                    if user.role != 'chef' or user.service != courrier.service_actuel:
+                        return Response(
+                            {"error": "Vous n'êtes pas autorisé à affecter ce courrier"},
+                            status=status.HTTP_403_FORBIDDEN
+                        )
+                    
+                    # Récupérer le membre
+                    from django.contrib.auth import get_user_model
+                    User = get_user_model()
+                    
+                    try:
+                        membre = User.objects.get(
+                            id=membre_id,
+                            service=courrier.service_actuel,
+                            role__in=['collaborateur', 'agent_service'],
+                            actif=True
+                        )
+                    except User.DoesNotExist:
+                        return Response(
+                            {"error": "Membre non trouvé dans ce service"},
+                            status=status.HTTP_404_NOT_FOUND
+                        )
+                    
+                    # Affecter le courrier
+                    courrier.responsable_actuel = membre
+                    courrier.agent_traitant = membre
+                    courrier.statut = 'traitement'
+                    courrier.traitement_statut = 'prise_en_charge'
+                    courrier.delai_traitement_jours = delai_jours
+                    
+                    # Recalculer la date d'échéance
+                    if delai_jours and courrier.date_reception:
+                        courrier.date_echeance = courrier.date_reception + timedelta(days=delai_jours)
+                    
+                    courrier.save()
+                    
+                    # ── NOTIFICATION : alerter le membre assigné ───────────
+                    notify_user(
+                        user_id=membre.id,
+                        message=f"Un courrier vous a été assigné par {user.get_full_name()} : {courrier.reference}",
+                        notification_type="courrier_assigne",
+                        data={"courrier_id": courrier.id, "reference": courrier.reference,
+                              "objet": courrier.objet, "assigneur": user.get_full_name(),
+                              "echeance": str(courrier.date_echeance) if courrier.date_echeance else None}
                     )
-                    courrier.reponse_associee = reponse_obj
-                
-                courrier.save()
-                
-                # Terminer l'étape en cours
-                etape_en_cours = TraitementEtape.objects.filter(
-                    courrier=courrier,
-                    agent=user,
-                    statut='en_cours'
-                ).first()
-                
-                if etape_en_cours:
-                    etape_en_cours.statut = 'termine'
-                    etape_en_cours.date_fin = timezone.now()
-                    etape_en_cours.save()
-                
-                # Journaliser
-                ActionHistorique.objects.create(
-                    courrier=courrier,
-                    user=user,
-                    action="TRAITEMENT_TERMINE",
-                    commentaire=commentaire or "Courrier traité"
+                    
+                    # Créer une instruction
+                    if instructions:
+                        InstructionCourrier.objects.create(
+                            courrier=courrier,
+                            type_instruction='assignation',
+                            instruction=instructions,
+                            agent_assignee=membre,
+                            date_echeance=courrier.date_echeance,
+                            statut='en_attente'
+                        )
+                    
+                    # Créer une étape de traitement
+                    TraitementEtape.objects.create(
+                        courrier=courrier,
+                        type_etape='prise_en_charge',
+                        agent=membre,
+                        description=f"Affecté par {user.get_full_name()}",
+                        commentaire=commentaire,
+                        statut='en_cours',
+                        date_debut=timezone.now()
+                    )
+                    
+                    # Journaliser
+                    ActionHistorique.objects.create(
+                        courrier=courrier,
+                        user=user,
+                        action="AFFECTATION_MEMBRE",
+                        commentaire=f"Affecté à {membre.get_full_name()} ({membre.role})"
+                    )
+                    
+                    serializer = CourrierDetailSerializer(courrier, context={'request': request})
+                    
+                    return Response({
+                        "success": True,
+                        "message": f"Courrier affecté à {membre.get_full_name()}",
+                        "courrier": serializer.data
+                    })
+                    
+            except Exception as e:
+                logger.error(f"Erreur affectation membre: {str(e)}")
+                return Response(
+                    {"error": str(e)},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
                 )
+
+
+        @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
+        def traiter_courrier(self, request, pk=None):
+            """
+            Marquer un courrier comme traité (pour les agents/collaborateurs)
+            """
+            try:
+                courrier = self.get_object()
+                user = request.user
+                reponse = request.data.get('reponse', '')
+                commentaire = request.data.get('commentaire', '')
                 
-                serializer = CourrierDetailSerializer(courrier, context={'request': request})
+                # Vérifier que l'utilisateur est bien le responsable
+                if courrier.responsable_actuel != user:
+                    return Response(
+                        {"error": "Vous n'êtes pas le responsable de ce courrier"},
+                        status=status.HTTP_403_FORBIDDEN
+                    )
                 
-                return Response({
-                    "success": True,
-                    "message": "Courrier marqué comme traité",
-                    "courrier": serializer.data
-                })
-                
-        except Exception as e:
-            logger.error(f"Erreur traitement courrier: {str(e)}")
-            return Response(
-                {"error": str(e)},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
+                with transaction.atomic():
+                    # Mettre à jour le statut
+                    courrier.statut = 'repondu'
+                    courrier.traitement_statut = 'termine'
+                    courrier.date_fin_traitement = timezone.now()
+                    courrier.date_cloture = timezone.now().date()
+                    
+                    # Sauvegarder la réponse si fournie
+                    if reponse:
+                        # Créer une réponse associée
+                        reponse_obj = CourrierReponse.objects.create(
+                            courrier_origine=courrier,
+                            type_reponse='email',
+                            objet=f"RE: {courrier.objet}",
+                            contenu=reponse,
+                            destinataires=[courrier.expediteur_email] if courrier.expediteur_email else [],
+                            redacteur=user,
+                            statut='envoye'
+                        )
+                        courrier.reponse_associee = reponse_obj
+                    
+                    courrier.save()
+                    
+                    # Terminer l'étape en cours
+                    etape_en_cours = TraitementEtape.objects.filter(
+                        courrier=courrier,
+                        agent=user,
+                        statut='en_cours'
+                    ).first()
+                    
+                    if etape_en_cours:
+                        etape_en_cours.statut = 'termine'
+                        etape_en_cours.date_fin = timezone.now()
+                        etape_en_cours.save()
+                    
+                    # Journaliser
+                    ActionHistorique.objects.create(
+                        courrier=courrier,
+                        user=user,
+                        action="TRAITEMENT_TERMINE",
+                        commentaire=commentaire or "Courrier traité"
+                    )
+                    
+                    serializer = CourrierDetailSerializer(courrier, context={'request': request})
+                    
+                    return Response({
+                        "success": True,
+                        "message": "Courrier marqué comme traité",
+                        "courrier": serializer.data
+                    })
+                    
+            except Exception as e:
+                logger.error(f"Erreur traitement courrier: {str(e)}")
+                return Response(
+                    {"error": str(e)},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                )
 
 
     @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
     def mes_courriers_a_traiter(self, request, pk=None):
         """
-        Pour un membre (agent/collaborateur), liste ses courriers à traiter
+        Liste les courriers assignés à l'utilisateur connecté (agent ou collaborateur).
+        Accessible aussi aux chefs/admin pour consulter leur charge.
         """
-        try:
-            user = request.user
-            
-            # Vérifier que l'utilisateur est agent ou collaborateur
-            if user.role not in ['agent_service', 'collaborateur']:
-                return Response(
-                    {"error": "Accès non autorisé"},
-                    status=status.HTTP_403_FORBIDDEN
-                )
-            
-            # Courriers assignés à cet utilisateur
-            courriers = Courrier.objects.filter(
-                responsable_actuel=user,
-                archived=False,
-                statut='traitement'
-            ).select_related('category', 'service_impute', 'created_by')
-            
-            # Statistiques
-            stats = {
-                'total': courriers.count(),
-                'urgents': courriers.filter(priorite='urgente').count(),
-                'en_retard': courriers.filter(
-                    date_echeance__lt=timezone.now().date()
-                ).count(),
-                'a_traiter_aujourd_hui': courriers.filter(
-                    date_echeance=timezone.now().date()
-                ).count()
-            }
-            
-            # Pagination
-            page = int(request.query_params.get('page', 1))
-            page_size = int(request.query_params.get('page_size', 10))
-            start = (page - 1) * page_size
-            end = start + page_size
-            
-            courriers_page = courriers.order_by(
-                '-priorite', 'date_echeance', '-created_at'
-            )[start:end]
-            
-            return Response({
-                'stats': stats,
-                'courriers': CourrierListSerializer(courriers_page, many=True, context={'request': request}).data,
-                'total': courriers.count(),
-                'page': page,
-                'page_size': page_size,
-                'total_pages': (courriers.count() + page_size - 1) // page_size
-            })
-            
-        except Exception as e:
-            logger.error(f"Erreur mes_courriers_a_traiter: {str(e)}")
-            return Response(
-                {"error": str(e)},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
+        user = request.user
 
-    
+        # Construire le filtre de base : courriers dont je suis responsable
+        base_q = (
+            Q(responsable_actuel=user) |
+            Q(agent_traitant=user)
+        )
+
+        # Exclure les courriers clôturés/archivés
+        courriers = Courrier.objects.filter(base_q).exclude(
+            traitement_statut__in=['cloture', 'rejete']
+        ).exclude(
+            statut__in=['archive', 'repondu', 'envoye']
+        ).select_related(
+            'service_impute', 'service_actuel', 'created_by',
+            'responsable_actuel', 'agent_traitant'
+        ).distinct()
+
+        # Statistiques (safe : count ne lève pas d'erreur si date_echeance est null)
+        today = timezone.now().date()
+        stats_data = {
+            'total':    courriers.count(),
+            'urgents':  courriers.filter(priorite='urgente').count(),
+            'en_retard': courriers.filter(
+                date_echeance__isnull=False,
+                date_echeance__lt=today
+            ).count(),
+            'a_traiter_aujourd_hui': courriers.filter(
+                date_echeance=today
+            ).count(),
+        }
+
+        # Pagination manuelle simple
+        try:
+            page      = max(1, int(request.query_params.get('page', 1)))
+            page_size = max(1, min(100, int(request.query_params.get('page_size', 10))))
+        except (ValueError, TypeError):
+            page, page_size = 1, 10
+
+        total = courriers.count()
+        start = (page - 1) * page_size
+        end   = start + page_size
+
+        # Tri : urgents d'abord, puis par échéance, puis par date de réception
+        courriers_page = courriers.order_by(
+            '-priorite', 'date_echeance', '-date_reception'
+        )[start:end]
+
+        return Response({
+            'stats':        stats_data,
+            'courriers':    CourrierListSerializer(courriers_page, many=True, context={'request': request}).data,
+            'total':        total,
+            'page':         page,
+            'page_size':    page_size,
+            'total_pages':  max(1, (total + page_size - 1) // page_size),
+        })
+
+        
     @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
     def envoyer_a(self, request, pk=None):
-        """
-        Transmet le courrier à un autre utilisateur du système (envoi interne)
-        """
         try:
             courrier = self.get_object()
             user = request.user
             destinataire_id = request.data.get('destinataire_id')
             commentaire = request.data.get('commentaire', '')
-            
+
             if not destinataire_id:
-                return Response(
-                    {"error": "L'ID du destinataire est requis"},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-            
-            # Récupérer le destinataire
-            try:
-                destinataire = User.objects.get(id=destinataire_id, actif=True)
-            except User.DoesNotExist:
-                return Response(
-                    {"error": "Destinataire non trouvé"},
-                    status=status.HTTP_404_NOT_FOUND
-                )
-            
-            # Nom complet du destinataire
-            destinataire_nom = f"{destinataire.prenom} {destinataire.nom}".strip()
-            
-            # Sauvegarder l'ancien responsable pour l'historique
-            ancien_responsable = courrier.responsable_actuel
-            
-            # 🔴 IMPORTANT: Mettre à jour TOUS les champs nécessaires
+                return Response({"error": "L'ID du destinataire est requis"}, status=400)
+
+            destinataire = User.objects.get(id=destinataire_id, actif=True)
+
+            # Mise à jour du courrier
             courrier.responsable_actuel = destinataire
-            courrier.service_actuel = destinataire.service  # Mettre à jour le service
-            courrier.statut = 'traitement'  # Changer le statut
+            courrier.service_actuel = destinataire.service
+            courrier.statut = 'traitement'
             courrier.traitement_statut = 'prise_en_charge'
             courrier.save()
-            
-            # Créer une notification interne (via historique)
+
             ActionHistorique.objects.create(
                 courrier=courrier,
                 user=user,
                 action="TRANSMISSION_INTERNE",
-                commentaire=f"Courrier transmis à {destinataire_nom} - {commentaire}"
+                commentaire=f"Transmis à {destinataire.get_full_name()} - {commentaire}"
             )
-            
-            # Retourner les informations complètes
+
+            # ⚡ Envoyer une notification en temps réel au destinataire
+            channel_layer = get_channel_layer()
+            async_to_sync(channel_layer.group_send)(
+                f'user_{destinataire.id}',
+                {
+                    'type': 'send_notification',
+                    'message': f'Nouveau courrier transmis : {courrier.reference} - {courrier.objet}',
+                    'data': {
+                        'courrier_id': courrier.id,
+                        'reference': courrier.reference,
+                        'objet': courrier.objet,
+                    }
+                }
+            )
+
             serializer = CourrierDetailSerializer(courrier, context={'request': request})
-            
             return Response({
                 "success": True,
-                "message": f"Courrier transmis avec succès à {destinataire_nom}",
-                "destinataire": {
-                    "id": destinataire.id,
-                    "nom": destinataire_nom,
-                    "email": destinataire.email,
-                    "role": destinataire.role,
-                    "service": destinataire.service.nom if destinataire.service else None
-                },
+                "message": f"Courrier transmis à {destinataire.get_full_name()}",
                 "courrier": serializer.data
             })
-            
+
+        except User.DoesNotExist:
+            return Response({"error": "Destinataire non trouvé"}, status=404)
         except Exception as e:
-            logger.error(f"Erreur transmission interne: {str(e)}", exc_info=True)
-            return Response(
-                {"error": f"Erreur lors de la transmission: {str(e)}"},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
-        
+            logger.error(f"Erreur transmission: {str(e)}", exc_info=True)
+            return Response({"error": str(e)}, status=500)
+
     def _generate_pdf_buffer(self, courrier):
-        """Génère le PDF du courrier et retourne un buffer"""
-        from reportlab.pdfgen import canvas
-        from reportlab.lib.pagesizes import A4
-        from reportlab.lib.colors import HexColor, black, grey
-        from datetime import datetime
-        import io
-        import os
-        
-        buffer = io.BytesIO()
-        width, height = A4
-        margin = 50
-        right_margin = width - margin
-        
-        p = canvas.Canvas(buffer, pagesize=A4)
-        
-        # Référence en haut à droite
-        p.setFont("Helvetica", 10)
-        p.setFillColor(black)
-        p.drawRightString(right_margin, height - 60, courrier.reference)
-        
-        # Date
-        if courrier.date_envoi:
-            date_text = f"Ouagadougou, le {courrier.date_envoi.strftime('%d %B %Y')}"
-        else:
-            date_text = f"Ouagadougou, le {datetime.now().strftime('%d %B %Y')}"
-        p.drawRightString(right_margin, height - 120, date_text)
-        
-        # Expéditeur/Destinataire
-        y = height - 200
-        p.setFont("Helvetica", 11)
-        p.drawString(margin, y, "Le Directeur Général de Zepintel")
-        y -= 20
-        p.setFont("Helvetica-Bold", 11)
-        p.drawString(margin, y, "A")
-        y -= 25
-        p.setFont("Helvetica", 11)
-        if courrier.destinataire_nom:
-            p.drawString(margin, y, courrier.destinataire_nom)
-            y -= 8
-        y -= 100
-        
-        # Objet
-        p.setFont("Helvetica-Bold", 11)
-        p.drawString(margin, y, f"Objet : {courrier.objet}")
-        y -= 30
-        
-        # Contenu
-        if courrier.contenu_texte:
+            """Génère le PDF du courrier et retourne un buffer"""
+            from reportlab.pdfgen import canvas
+            from reportlab.lib.pagesizes import A4
+            from reportlab.lib.colors import HexColor, black, grey
+            from datetime import datetime
+            import io
+            import os
+            
+            buffer = io.BytesIO()
+            width, height = A4
+            margin = 50
+            right_margin = width - margin
+            
+            p = canvas.Canvas(buffer, pagesize=A4)
+            
+            # Référence en haut à droite
             p.setFont("Helvetica", 10)
-            paragraphs = courrier.contenu_texte.split('\n\n')
-            for para in paragraphs:
-                if not para.strip():
-                    continue
-                lines = para.split('\n')
-                for line in lines:
-                    if not line.strip():
-                        y -= 10
+            p.setFillColor(black)
+            p.drawRightString(right_margin, height - 60, courrier.reference)
+            
+            # Date
+            if courrier.date_envoi:
+                date_text = f"Ouagadougou, le {courrier.date_envoi.strftime('%d %B %Y')}"
+            else:
+                date_text = f"Ouagadougou, le {datetime.now().strftime('%d %B %Y')}"
+            p.drawRightString(right_margin, height - 120, date_text)
+            
+            # Expéditeur/Destinataire
+            y = height - 200
+            p.setFont("Helvetica", 11)
+            p.drawString(margin, y, "Le Directeur Général de Zepintel")
+            y -= 20
+            p.setFont("Helvetica-Bold", 11)
+            p.drawString(margin, y, "A")
+            y -= 25
+            p.setFont("Helvetica", 11)
+            if courrier.destinataire_nom:
+                p.drawString(margin, y, courrier.destinataire_nom)
+                y -= 8
+            y -= 100
+            
+            # Objet
+            p.setFont("Helvetica-Bold", 11)
+            p.drawString(margin, y, f"Objet : {courrier.objet}")
+            y -= 30
+            
+            # Contenu
+            if courrier.contenu_texte:
+                p.setFont("Helvetica", 10)
+                paragraphs = courrier.contenu_texte.split('\n\n')
+                for para in paragraphs:
+                    if not para.strip():
                         continue
-                    if y < 100:
-                        p.showPage()
-                        y = height - 50
-                    # Découper les longues lignes
-                    if len(line) > 90:
-                        words = line.split()
-                        current_line = ""
-                        for word in words:
-                            if len(current_line + " " + word) <= 90:
-                                if current_line:
-                                    current_line += " " + word
+                    lines = para.split('\n')
+                    for line in lines:
+                        if not line.strip():
+                            y -= 10
+                            continue
+                        if y < 100:
+                            p.showPage()
+                            y = height - 50
+                        # Découper les longues lignes
+                        if len(line) > 90:
+                            words = line.split()
+                            current_line = ""
+                            for word in words:
+                                if len(current_line + " " + word) <= 90:
+                                    if current_line:
+                                        current_line += " " + word
+                                    else:
+                                        current_line = word
                                 else:
+                                    p.drawString(margin + 10, y, current_line)
+                                    y -= 15
                                     current_line = word
-                            else:
+                            if current_line:
                                 p.drawString(margin + 10, y, current_line)
                                 y -= 15
-                                current_line = word
-                        if current_line:
-                            p.drawString(margin + 10, y, current_line)
+                        else:
+                            p.drawString(margin + 10, y, line)
                             y -= 15
+                    y -= 10
+            
+            # Formule de politesse
+            y -= 10
+            p.setFont("Helvetica", 10)
+            formule = "Dans l'attente de votre retour, nous vous prions d'agréer, Monsieur le Directeur Général, l'expression de nos salutations distinguées."
+            # Découper la formule si nécessaire
+            if len(formule) > 90:
+                words = formule.split()
+                current_line = ""
+                for word in words:
+                    if len(current_line + " " + word) <= 90:
+                        if current_line:
+                            current_line += " " + word
+                        else:
+                            current_line = word
                     else:
-                        p.drawString(margin + 10, y, line)
+                        p.drawString(margin, y, current_line)
                         y -= 15
-                y -= 10
-        
-        # Formule de politesse
-        y -= 10
-        p.setFont("Helvetica", 10)
-        formule = "Dans l'attente de votre retour, nous vous prions d'agréer, Monsieur le Directeur Général, l'expression de nos salutations distinguées."
-        # Découper la formule si nécessaire
-        if len(formule) > 90:
-            words = formule.split()
-            current_line = ""
-            for word in words:
-                if len(current_line + " " + word) <= 90:
-                    if current_line:
-                        current_line += " " + word
-                    else:
                         current_line = word
-                else:
+                if current_line:
                     p.drawString(margin, y, current_line)
                     y -= 15
-                    current_line = word
-            if current_line:
-                p.drawString(margin, y, current_line)
+            else:
+                p.drawString(margin, y, formule)
                 y -= 15
-        else:
-            p.drawString(margin, y, formule)
-            y -= 15
-        
-        # Signature
-        y -= 10
-        p.setFont("Helvetica-Bold", 11)
-        signataire = "Le Directeur Général"
-        p.drawString(margin, y, signataire)
-        
-        # Pied de page
-        p.setFont("Helvetica", 7)
-        p.setFillColor(grey)
-        p.drawString(margin, 30, "ZEPINTEL - 1200 Logements, Ouagadougou - Tél: +226 25 46 36 86 / +226 60 60 60 19")
-        p.drawString(margin, 18, "Email: contact@zepintel.com - Site: www.zepintel.com")
-        p.drawRightString(right_margin, 30, f"Réf: {courrier.reference}")
-        
-        p.showPage()
-        p.save()
-        
-        buffer.seek(0)
-        
-        # Fusionner avec l'en-tête
-        try:
-            entete_path = r"C:\MesProjets\gestion_courrier\frontend-admin-courrier-amina\public\images\Papier entete zepintel_vf.pdf"
-            if os.path.exists(entete_path):
-                buffer = fusionner_avec_entete(buffer, entete_path)
-        except Exception as e:
-            logger.error(f"Erreur fusion en-tête: {e}")
-        
-        return buffer 
-   
-    @action(detail=True, methods=['get'], permission_classes=[IsAuthenticated])
-    def destinataires_disponibles(self, request, pk=None):
-        """
-        Liste les utilisateurs disponibles pour la transmission
-        """
-        try:
-            courrier = self.get_object()
-            user = request.user
             
-            # Exclure l'utilisateur courant
-            destinataires = User.objects.filter(
-                actif=True
-            ).exclude(
-                id=user.id
-            ).values(
-                'id', 'prenom', 'nom', 'email', 'role', 'service__nom'
-            ).order_by('role', 'prenom', 'nom')
+            # Signature
+            y -= 10
+            p.setFont("Helvetica-Bold", 11)
+            signataire = "Le Directeur Général"
+            p.drawString(margin, y, signataire)
             
-            # Ajouter le nom complet et le service
-            for d in destinataires:
-                d['full_name'] = f"{d['prenom']} {d['nom']}".strip()
-                d['service_nom'] = d['service__nom'] or 'Aucun service'
-                d['role_label'] = self._get_role_label(d['role'])
+            # Pied de page
+            p.setFont("Helvetica", 7)
+            p.setFillColor(grey)
+            p.drawString(margin, 30, "ZEPINTEL - 1200 Logements, Ouagadougou - Tél: +226 25 46 36 86 / +226 60 60 60 19")
+            p.drawString(margin, 18, "Email: contact@zepintel.com - Site: www.zepintel.com")
+            p.drawRightString(right_margin, 30, f"Réf: {courrier.reference}")
             
-            return Response({
-                'destinataires': destinataires,
-                'total': len(destinataires)
-            })
+            p.showPage()
+            p.save()
             
-        except Exception as e:
-            logger.error(f"Erreur destinataires_disponibles: {str(e)}")
-            return Response(
-                {"error": str(e)},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
-
+            buffer.seek(0)
+            
+            # Fusionner avec l'en-tête
+            try:
+                entete_path = r"C:\MesProjets\gestion_courrier\frontend-admin-courrier-amina\public\images\Papier entete zepintel_vf.pdf"
+                if os.path.exists(entete_path):
+                    buffer = fusionner_avec_entete(buffer, entete_path)
+            except Exception as e:
+                logger.error(f"Erreur fusion en-tête: {e}")
+            
+            return buffer 
+    
     def _get_role_label(self, role):
-        """Retourne le libellé du rôle"""
-        labels = {
-            'admin': 'Administrateur',
-            'chef': 'Chef de service',
-            'direction': 'Direction',
-            'collaborateur': 'Collaborateur',
-            'agent_courrier': 'Agent courrier',
-            'agent_service': 'Agent de service',
-            'archiviste': 'Archiviste'
-        }
-        return labels.get(role, role)
+            """Retourne le libellé du rôle"""
+            labels = {
+                'admin': 'Administrateur',
+                'chef': 'Chef de service',
+                'direction': 'Direction',
+                'collaborateur': 'Collaborateur',
+                'agent_courrier': 'Agent courrier',
+                'agent_service': 'Agent de service',
+                'archiviste': 'Archiviste'
+            }
+            return labels.get(role, role)
 
-# Dans courriers/views.py - Classe CourrierViewSet
+    # Dans courriers/views.py - Classe CourrierViewSet
 
     @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
     def transmettre_interne(self, request, pk=None):
@@ -1683,6 +1925,26 @@ class CourrierViewSet(viewsets.ModelViewSet):
                     commentaire=f"Transmis vers {service_dest.nom if service_dest else user_dest.get_full_name()} - {commentaire}"
                 )
                 
+                # ── NOTIFICATION : alerter l'utilisateur destinataire ──
+                if user_dest:
+                    notify_user(
+                        user_id=user_dest.id,
+                        message=f"Un courrier vous a été transmis par {user.get_full_name()} : {courrier.reference}",
+                        notification_type="courrier_assigne",
+                        data={"courrier_id": courrier.id, "reference": courrier.reference,
+                              "objet": courrier.objet, "expediteur": user.get_full_name(),
+                              "commentaire": commentaire}
+                    )
+                # Si transmission vers un service, notifier le chef du service
+                elif service_dest and service_dest.chef_id:
+                    notify_user(
+                        user_id=service_dest.chef_id,
+                        message=f"Un courrier a été transmis à votre service : {courrier.reference}",
+                        notification_type="courrier_assigne",
+                        data={"courrier_id": courrier.id, "reference": courrier.reference,
+                              "objet": courrier.objet, "expediteur": user.get_full_name()}
+                    )
+                
                 serializer = CourrierDetailSerializer(courrier, context={'request': request})
                 
                 return Response({
@@ -1696,6 +1958,53 @@ class CourrierViewSet(viewsets.ModelViewSet):
             return Response({"error": str(e)}, status=500)
 
 
+    @action(detail=True, methods=['get'], permission_classes=[IsAuthenticated])
+    def destinataires_disponibles(self, request, pk=None):
+        """
+        Liste les utilisateurs disponibles pour la transmission
+        """
+        try:
+            # ── BUG 2 CORRIGÉ ────────────────────────────────────────────────
+            # self.get_object() applique get_queryset() qui filtre selon le rôle
+            # de l'utilisateur. Si le courrier n'est pas dans son scope
+            # (ex: pas responsable_actuel, pas created_by), cela lève Http404
+            # capturé par le except -> "No Courrier matches the given query".
+            # Fix : accéder au courrier directement par pk, hors du scope.
+            courrier = get_object_or_404(Courrier, pk=pk)
+            user = request.user
+            
+            destinataires = User.objects.filter(
+                actif=True
+            ).exclude(
+                id=user.id
+            ).values(
+                'id', 'prenom', 'nom', 'email', 'role', 'service__nom'
+            ).order_by('role', 'prenom', 'nom')
+            
+            result = []
+            for d in destinataires:
+                result.append({
+                    'id': d['id'],
+                    'full_name': f"{d['prenom']} {d['nom']}".strip(),
+                    'prenom': d['prenom'],
+                    'nom': d['nom'],
+                    'email': d['email'],
+                    'role': d['role'],
+                    'role_label': self._get_role_label(d['role']),
+                    'service_nom': d['service__nom'] or 'Aucun service'
+                })
+            
+            return Response({
+                'destinataires': result,
+                'total': len(result)
+            })
+            
+        except Exception as e:
+            logger.error(f"Erreur destinataires_disponibles: {str(e)}")
+            return Response(
+                {"error": str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
     @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
     def viser_courrier(self, request, pk=None):
         """
@@ -1848,6 +2157,8 @@ class CourrierViewSet(viewsets.ModelViewSet):
         except Exception as e:
             logger.error(f"Erreur membres_service: {str(e)}")
             return Response({"error": str(e)}, status=500)
+
+
 
 
 class ImputationViewSet(viewsets.ModelViewSet):
@@ -2350,6 +2661,16 @@ class CourrierTraitementViewSet(viewsets.ViewSet):
                     commentaire=f"Courrier pris en charge pour traitement"
                 )
                 
+                # ── NOTIFICATION : alerter le chef du service ──────────────
+                if courrier.service_actuel and courrier.service_actuel.chef_id and courrier.service_actuel.chef_id != user.id:
+                    notify_user(
+                        user_id=courrier.service_actuel.chef_id,
+                        message=f"{user.get_full_name()} a pris en charge le courrier {courrier.reference}",
+                        notification_type="traitement_update",
+                        data={"courrier_id": courrier.id, "reference": courrier.reference,
+                              "agent": user.get_full_name()}
+                    )
+                
                 serializer = CourrierDetailSerializer(courrier, context={'request': request})
                 return Response(serializer.data)
                 
@@ -2373,7 +2694,8 @@ class CourrierTraitementViewSet(viewsets.ViewSet):
             
             # Vérifier que l'utilisateur peut ajouter des instructions
             user = request.user
-            if user.role not in ['admin', 'direction', 'chef'] and courrier.agent_traitant != user:
+            est_agent_traitant3 = (courrier.agent_traitant == user or courrier.responsable_actuel == user)
+            if user.role not in ['admin', 'direction', 'chef', 'agent_service', 'collaborateur'] and not est_agent_traitant3:
                 return Response(
                     {"error": "Vous n'avez pas la permission d'ajouter des instructions"},
                     status=status.HTTP_403_FORBIDDEN
@@ -2422,338 +2744,7 @@ class CourrierTraitementViewSet(viewsets.ViewSet):
                 {"error": "Erreur lors de l'ajout de l'instruction"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
-    
-    @action(detail=True, methods=['post'])
-    def rediger_reponse(self, request, pk=None):
-        """Rédiger une réponse au courrier"""
-        try:
-            with transaction.atomic():
-                courrier = Courrier.objects.get(pk=pk)
-                user = request.user
-                
-                # Vérifier les permissions
-                if courrier.agent_traitant != user and user.role not in ['admin', 'direction', 'chef']:
-                    return Response(
-                        {"error": "Vous n'avez pas la permission de rédiger une réponse"},
-                        status=status.HTTP_403_FORBIDDEN
-                    )
-                
-                # Validation des données
-                required_fields = ['type_reponse', 'objet', 'contenu', 'destinataires']
-                for field in required_fields:
-                    if field not in request.data:
-                        return Response(
-                            {"error": f"Le champ {field} est requis"},
-                            status=status.HTTP_400_BAD_REQUEST
-                        )
-                
-                # Créer la réponse
-                reponse = CourrierReponse.objects.create(
-                    courrier_origine=courrier,
-                    type_reponse=request.data['type_reponse'],
-                    objet=request.data['objet'],
-                    contenu=request.data['contenu'],
-                    destinataires=request.data['destinataires'],
-                    copies=request.data.get('copies', []),
-                    canal_envoi=request.data.get('canal_envoi', 'email'),
-                    redacteur=user,
-                    statut='brouillon',
-                    pieces_jointes_reponse=request.data.get('pieces_jointes', [])
-                )
-                
-                # Si un modèle est spécifié
-                if request.data.get('modele_id'):
-                    from .models import ModeleCourrier
-                    try:
-                        modele = ModeleCourrier.objects.get(pk=request.data['modele_id'])
-                        reponse.modele_utilise = modele
-                        reponse.save()
-                    except ModeleCourrier.DoesNotExist:
-                        pass
-                
-                # Mettre à jour le statut du traitement
-                courrier.traitement_statut = TraitementStatus.REDACTION
-                courrier.reponse_associee = reponse
-                courrier.save()
-                
-                # Créer une étape de traitement
-                TraitementEtape.objects.create(
-                    courrier=courrier,
-                    type_etape='redaction',
-                    agent=user,
-                    description="Rédaction de la réponse",
-                    commentaire=f"Type: {request.data['type_reponse']}",
-                    statut='termine',
-                    date_fin=timezone.now()
-                )
-                
-                return Response({
-                    "message": "Réponse rédigée avec succès",
-                    "reponse_id": str(reponse.id),
-                    "reponse_reference": reponse.reference
-                })
-                
-        except Courrier.DoesNotExist:
-            return Response(
-                {"error": "Courrier non trouvé"},
-                status=status.HTTP_404_NOT_FOUND
-            )
-        except Exception as e:
-            logger.error(f"Erreur rédaction réponse: {str(e)}")
-            return Response(
-                {"error": "Erreur lors de la rédaction de la réponse"},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
-
-# Dans la classe CourrierViewSet, ajoutez ces méthodes :
-
-    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
-    def soumettre_validation(self, request, pk=None):
-        """Soumettre un courrier pour validation"""
-        courrier = self.get_object()
-        user = request.user
-        
-        # Vérifier les permissions
-        if user.role not in ['chef', 'direction', 'admin']:
-            return Response(
-                {"error": "Vous n'êtes pas autorisé à soumettre pour validation"},
-                status=status.HTTP_403_FORBIDDEN
-            )
-        
-        try:
-            with transaction.atomic():
-                # Créer une validation
-                validation = ValidationCourrier.objects.create(
-                    courrier=courrier,
-                    type_validation='hierarchique',
-                    validateur=courrier.service_impute.chef if courrier.service_impute else None,
-                    ordre=1,
-                    statut='en_attente',
-                    commentaire=request.data.get('commentaire', '')
-                )
-                
-                # Mettre à jour le statut du courrier
-                courrier.traitement_statut = TraitementStatus.VALIDATION
-                courrier.besoin_validation = True
-                courrier.save()
-                
-                # Journaliser
-                ActionHistorique.objects.create(
-                    courrier=courrier,
-                    user=user,
-                    action="SOUMISSION_VALIDATION",
-                    commentaire="Courrier soumis pour validation"
-                )
-                
-                return Response({
-                    "message": "Courrier soumis pour validation avec succès",
-                    "validation_id": str(validation.id)
-                }, status=status.HTTP_200_OK)
-                
-        except Exception as e:
-            logger.error(f"Erreur soumission validation: {str(e)}")
-            return Response(
-                {"error": f"Erreur: {str(e)}"},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
-
-    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
-    def valider(self, request, pk=None):
-        """Valider ou rejeter un courrier"""
-        courrier = self.get_object()
-        validation_id = request.data.get('validation_id')
-        action = request.data.get('action', 'valider')
-        commentaire = request.data.get('commentaire', '')
-        
-        try:
-            validation = ValidationCourrier.objects.get(
-                id=validation_id, 
-                courrier=courrier
-            )
-            
-            # Vérifier que l'utilisateur est le validateur
-            if validation.validateur != request.user:
-                return Response(
-                    {"error": "Vous n'êtes pas autorisé à valider ce courrier"},
-                    status=status.HTTP_403_FORBIDDEN
-                )
-            
-            # Mettre à jour la validation
-            validation.statut = 'valide' if action == 'valider' else 'rejete'
-            validation.commentaire = commentaire
-            validation.date_action = timezone.now()
-            validation.save()
-            
-            if action == 'valider':
-                # Si validé, passer à l'étape suivante
-                courrier.niveau_validation_atteint += 1
-                if courrier.niveau_validation_atteint >= courrier.niveau_validation_requis:
-                    courrier.traitement_statut = TraitementStatus.SIGNATURE
-                courrier.save()
-                
-                ActionHistorique.objects.create(
-                    courrier=courrier,
-                    user=request.user,
-                    action="VALIDATION_APPROUVEE",
-                    commentaire=commentaire
-                )
-            else:
-                # Si rejeté, retour à l'étape de rédaction
-                courrier.traitement_statut = TraitementStatus.REDACTION
-                courrier.save()
-                
-                ActionHistorique.objects.create(
-                    courrier=courrier,
-                    user=request.user,
-                    action="VALIDATION_REJETEE",
-                    commentaire=commentaire
-                )
-            
-            return Response({
-                "message": f"Validation {action}ée avec succès",
-                "courrier": CourrierDetailSerializer(courrier).data
-            })
-            
-        except ValidationCourrier.DoesNotExist:
-            return Response(
-                {"error": "Validation non trouvée"},
-                status=status.HTTP_404_NOT_FOUND
-            )
-        except Exception as e:
-            logger.error(f"Erreur validation: {str(e)}")
-            return Response(
-                {"error": str(e)},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
-
-    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
-    def envoyer(self, request, pk=None):
-        """Marquer un courrier comme envoyé"""
-        courrier = self.get_object()
-        user = request.user
-        
-        try:
-            courrier.traitement_statut = TraitementStatus.CLOTURE
-            courrier.statut = 'envoye'
-            courrier.date_envoi = timezone.now().date()
-            courrier.date_fin_traitement = timezone.now()
-            courrier.date_cloture = timezone.now().date()
-            courrier.save()
-            
-            ActionHistorique.objects.create(
-                courrier=courrier,
-                user=user,
-                action="ENVOI",
-                commentaire="Courrier envoyé"
-            )
-            
-            return Response({
-                "message": "Courrier marqué comme envoyé avec succès"
-            })
-            
-        except Exception as e:
-            logger.error(f"Erreur envoi: {str(e)}")
-            return Response(
-                {"error": str(e)},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
-
-
-    @action(detail=True, methods=['get'])
-    def timeline(self, request, pk=None):
-        """Récupérer la timeline du traitement"""
-        try:
-            courrier = Courrier.objects.get(pk=pk)
-            
-            # Récupérer toutes les données de timeline
-            timeline_data = []
-            
-            # Étape de réception
-            if courrier.date_reception:
-                timeline_data.append({
-                    'type': 'reception',
-                    'date': courrier.date_reception,
-                    'titre': 'Réception du courrier',
-                    'description': f'Courrier reçu de {courrier.expediteur_nom}',
-                    'auteur': courrier.created_by.get_full_name() if courrier.created_by else 'Système'
-                })
-            
-            # Étape d'imputation
-            imputations = courrier.imputations.all()
-            for imputation in imputations:
-                timeline_data.append({
-                    'type': 'imputation',
-                    'date': imputation.date_imputation,
-                    'titre': 'Imputation',
-                    'description': f'Imputé au service {imputation.service.nom if imputation.service else "N/A"}',
-                    'auteur': imputation.responsable.get_full_name() if imputation.responsable else 'Système'
-                })
-            
-            # Étapes de traitement
-            etapes = courrier.traitement_etapes.all()
-            for etape in etapes:
-                timeline_data.append({
-                    'type': 'traitement',
-                    'date': etape.date_debut,
-                    'titre': etape.get_type_etape_display(),
-                    'description': etape.description,
-                    'auteur': etape.agent.get_full_name() if etape.agent else 'Système',
-                    'statut': etape.get_statut_display()
-                })
-            
-            # Validations
-            validations = courrier.validations.all()
-            for validation in validations:
-                timeline_data.append({
-                    'type': 'validation',
-                    'date': validation.date_action or validation.date_demande,
-                    'titre': f"Validation {validation.get_type_validation_display()}",
-                    'description': validation.commentaire or f"Statut: {validation.get_statut_display()}",
-                    'auteur': validation.validateur.get_full_name() if validation.validateur else 'En attente',
-                    'statut': validation.get_statut_display()
-                })
-            
-            # Instructions
-            instructions = courrier.instructions.all()
-            for instruction in instructions:
-                timeline_data.append({
-                    'type': 'instruction',
-                    'date': instruction.date_assignation,
-                    'titre': f"Instruction: {instruction.get_type_instruction_display()}",
-                    'description': instruction.instruction[:100] + '...' if len(instruction.instruction) > 100 else instruction.instruction,
-                    'auteur': 'Système',
-                    'statut': instruction.get_statut_display()
-                })
-            
-            # Réponses
-            reponses = courrier.reponses.all()
-            for reponse in reponses:
-                timeline_data.append({
-                    'type': 'reponse',
-                    'date': reponse.date_redaction,
-                    'titre': f"Réponse: {reponse.get_type_reponse_display()}",
-                    'description': reponse.objet,
-                    'auteur': reponse.redacteur.get_full_name() if reponse.redacteur else 'Système',
-                    'statut': reponse.get_statut_display()
-                })
-            
-            # Trier par date
-            timeline_data.sort(key=lambda x: x['date'])
-            
-            return Response(timeline_data)
-            
-        except Courrier.DoesNotExist:
-            return Response(
-                {"error": "Courrier non trouvé"},
-                status=status.HTTP_404_NOT_FOUND
-            )
-        except Exception as e:
-            logger.error(f"Erreur timeline: {str(e)}")
-            return Response(
-                {"error": "Erreur lors de la récupération de la timeline"},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
-    
+     
     @action(detail=True, methods=['get'])
     def detail_traitement(self, request, pk=None):
         """Récupérer les détails du traitement d'un courrier"""
@@ -2945,6 +2936,18 @@ class CourrierTraitementViewSet(viewsets.ViewSet):
                 commentaire=f"Assigné à {agent.get_full_name()} avec priorité {priorite_assignation}"
             )
             
+            # ── NOTIFICATION : alerter l'agent assigné ─────────────────────
+            notify_user(
+                user_id=agent.id,
+                message=f"Un courrier vous a été assigné par {request.user.get_full_name()} : {courrier.reference}",
+                notification_type="courrier_assigne",
+                data={"courrier_id": courrier.id, "reference": courrier.reference,
+                      "objet": courrier.objet, "assigneur": request.user.get_full_name(),
+                      "priorite": priorite_assignation,
+                      "echeance": str(courrier.date_echeance) if courrier.date_echeance else None,
+                      "instructions": instructions or ""}
+            )
+            
             # Retourner les détails complets
             serializer = CourrierDetailSerializer(courrier, context={'request': request})
             return Response({
@@ -3022,6 +3025,7 @@ class CourrierTraitementViewSet(viewsets.ViewSet):
         })
 
 
+
 class TraitementDashboardViewSet(viewsets.ViewSet):
     """
     Dashboard spécifique pour le traitement des courriers
@@ -3096,6 +3100,7 @@ class TraitementDashboardViewSet(viewsets.ViewSet):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
             
+
 # courriers/views.py
 class GenererPDFView(APIView):
     """Génère un PDF professionnel avec ReportLab"""

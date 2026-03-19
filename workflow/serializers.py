@@ -203,7 +203,6 @@ class StepActionSerializer(serializers.Serializer):
 
 
 class WorkflowStatsSerializer(serializers.Serializer):
-    """Serializer pour les statistiques de workflow"""
     total_workflows = serializers.IntegerField()
     workflows_actifs = serializers.IntegerField()
     workflows_termines = serializers.IntegerField()
@@ -211,9 +210,9 @@ class WorkflowStatsSerializer(serializers.Serializer):
     taux_achevement = serializers.FloatField()
     delai_moyen = serializers.FloatField(help_text="En heures")
     etapes_en_retard = serializers.IntegerField()
-    service_plus_actif = serializers.DictField()
-    validateur_plus_actif = serializers.DictField()
-    
+    service_plus_actif = serializers.DictField(required=False, allow_null=True)
+    validateur_plus_actif = serializers.DictField(required=False, allow_null=True)
+
     def to_representation(self, instance):
         data = super().to_representation(instance)
         data['taux_achevement'] = round(data['taux_achevement'], 2)
