@@ -62,6 +62,12 @@ class Courrier(models.Model):
     )
     
     reference = models.CharField(max_length=100, unique=True, blank=True)
+    reference_expediteur = models.CharField(
+        max_length=200,
+        blank=True,
+        null=True,
+        verbose_name="Référence du courrier de départ"
+    )
     type = models.CharField(max_length=20, choices=TypeCourrier.choices)
 
     # texte_extrait_path = models.CharField(

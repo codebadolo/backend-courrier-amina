@@ -79,19 +79,31 @@ class CourrierListSerializer(serializers.ModelSerializer):
     """Serializer pour la liste (allégé)"""
     category_nom = serializers.CharField(source='category.name', read_only=True)
     service_impute_nom = serializers.CharField(source='service_impute.nom', read_only=True)
+    service_actuel_nom = serializers.CharField(source='service_actuel.nom', read_only=True)
+    service_nom = serializers.SerializerMethodField()
+    type_display = serializers.CharField(source='get_type_display', read_only=True)
+    statut_display = serializers.CharField(source='get_statut_display', read_only=True)
     expediteur_initiale = serializers.SerializerMethodField()
     jours_restants = serializers.SerializerMethodField()
     est_en_retard = serializers.SerializerMethodField()
     priorite_icone = serializers.SerializerMethodField()
-    
+    traitement_statut = serializers.CharField(read_only=True)
+    responsable_actuel_nom = serializers.SerializerMethodField()
+    service_affichage = serializers.SerializerMethodField()
+
     class Meta:
         model = Courrier
         fields = [
-            'id', 'reference', 'type', 'objet', 'expediteur_nom',
+            'id', 'reference', 'type', 'type_display', 'objet', 'expediteur_nom',
             'expediteur_initiale', 'date_reception', 'date_echeance',
-            'statut', 'priorite', 'priorite_icone', 'confidentialite',
-            'category', 'category_nom', 'service_impute', 'service_impute_nom',
-            'jours_restants', 'est_en_retard', 'created_at'
+            'statut', 'statut_display', 'priorite', 'priorite_icone', 'confidentialite',
+            'category', 'category_nom',
+            'service_impute', 'service_impute_nom',
+            'service_actuel', 'service_actuel_nom',
+            'traitement_statut', 'responsable_actuel_nom',
+            'jours_restants', 'est_en_retard', 'created_at', 'date_archivage', 'archived',
+            'service_nom',
+            'service_affichage',
         ]
     
     def get_expediteur_initiale(self, obj):
@@ -113,6 +125,11 @@ class CourrierListSerializer(serializers.ModelSerializer):
             return obj.date_echeance < timezone.now().date()
         return False
     
+    def get_responsable_actuel_nom(self, obj):
+        if obj.responsable_actuel:
+            return obj.responsable_actuel.get_full_name() or obj.responsable_actuel.email
+        return None
+
     def get_priorite_icone(self, obj):
         icones = {
             'urgente': '🔥',
@@ -121,6 +138,22 @@ class CourrierListSerializer(serializers.ModelSerializer):
             'basse': '📋'
         }
         return icones.get(obj.priorite, '📄')
+    
+    def get_service_affichage(self, obj):
+        # Priorité au service actuel, puis service imputé, sinon None
+        if obj.service_actuel:
+            return obj.service_actuel.nom
+        if obj.service_impute:
+            return obj.service_impute.nom
+        return None
+    
+    def get_service_nom(self, obj):
+        """Retourne le nom du service actuel, sinon celui du service imputé, sinon None."""
+        if obj.service_actuel:
+            return obj.service_actuel.nom
+        if obj.service_impute:
+            return obj.service_impute.nom
+        return None
 
 
 class CourrierDetailSerializer(serializers.ModelSerializer):
@@ -215,7 +248,7 @@ class CourrierDetailSerializer(serializers.ModelSerializer):
             'actions_requises', 'documents_necessaires',
             'consultations', 'decision_preliminaire',
             'traitement_statut',
-            'traitement_statut_display',
+            'traitement_statut_display','reference_expediteur',
             
         ]
 
@@ -315,7 +348,7 @@ class CourrierCreateSerializer(serializers.ModelSerializer):
             'expediteur_email', 'expediteur_telephone', 'destinataire_nom',
             'canal', 'category', 'service_impute', 'date_echeance',
             'contenu_texte',  # AJOUTÉ pour recevoir le texte OCR
-            'pieces_jointes', 'ocr', 'classifier', 'creer_workflow'
+            'pieces_jointes', 'ocr', 'classifier', 'creer_workflow','reference_expediteur',
         ]
         extra_kwargs = {
             'expediteur_adresse': {'required': False, 'allow_blank': True},
@@ -355,7 +388,7 @@ class CourrierUpdateSerializer(serializers.ModelSerializer):
         fields = [
             'objet', 'priorite', 'confidentialite',
             'date_echeance', 'category', 'service_impute',
-            'service_actuel', 'responsable_actuel', 'statut'
+            'service_actuel', 'responsable_actuel', 'statut', 'reference_expediteur'
         ]
     
     def validate_statut(self, value):

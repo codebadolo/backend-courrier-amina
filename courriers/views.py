@@ -96,85 +96,82 @@ class CourrierViewSet(viewsets.ModelViewSet):
         'created_by': ['exact'],
         'date_reception': ['gte', 'lte', 'exact'],
         'date_echeance': ['gte', 'lte', 'exact'],
+        'archived': ['exact'], 
     }
 
     def get_queryset(self):
         queryset = Courrier.objects.all()
         user = self.request.user
-        
+
         # 🔴 IMPORTANT: Pour les détails d'un courrier spécifique, permettre au créateur
         if self.action == 'retrieve' and self.kwargs.get('pk'):
             try:
                 courrier = Courrier.objects.get(pk=self.kwargs['pk'])
-                # Si l'utilisateur est le créateur, il peut voir le courrier
                 if courrier.created_by == user:
                     return Courrier.objects.filter(pk=self.kwargs['pk'])
             except Courrier.DoesNotExist:
                 pass
-        
+
         # Filtrage par type
         type_courrier = self.request.query_params.get("type")
         if type_courrier:
             queryset = queryset.filter(type=type_courrier)
-        
+
         # Filtrage selon le rôle
         if user.is_superuser or user.role == 'admin':
+            # Admin : tout voir
             pass
         elif user.role == 'direction':
+            # Direction : courriers non confidentiels uniquement
             queryset = queryset.filter(confidentialite__in=['normale', 'restreinte'])
         elif user.role == 'chef':
             if user.service:
-                # Le chef voit les courriers de son service
                 queryset = queryset.filter(
                     Q(service_impute=user.service) |
-                    Q(service_actuel=user.service)|
-                    Q(responsable_actuel=user)|
+                    Q(service_actuel=user.service) |
+                    Q(responsable_actuel=user) |
                     Q(created_by=user)
                 )
             else:
                 queryset = queryset.none()
         elif user.role == 'agent_service':
             if user.service:
-                # ✅ CORRIGÉ: L'agent voit ses courriers assignés ET les courriers non assignés de son service
+                # ✅ Agent de service : uniquement les courriers qui lui sont assignés
                 queryset = queryset.filter(
-                    Q(service_actuel=user.service) &  # De son service
-                    (Q(responsable_actuel=user) )  # Assigné à lui ou non assigné
+                    Q(responsable_actuel=user) |
+                    Q(agent_traitant=user)
                 )
             else:
                 queryset = queryset.none()
-                
-        elif user.role == 'agent_service':
-            if user.service:
-                queryset = queryset.filter(service_actuel=user.service)
-            else:
-                queryset = queryset.none()
-
-        elif user.role == 'agent_courrier':  # 🔴 CHANGÉ: agent_courrier au lieu de agent_service
-        # ✅ AGENT COURRIER (secrétaire) voit:
-        # 1. Les courriers qui lui sont assignés (responsable_actuel = user)
-        # 2. Les courriers qu'il a créés lui-même
-        # 3. Les courriers du service courrier (général)
+        elif user.role == 'agent_courrier':
             if user.service:
                 queryset = queryset.filter(
-                    Q(responsable_actuel=user) |  # Assignés à lui
-                    Q(created_by=user)           # Créés par lui
-                    # Q(service_actuel=user.service)  # Tous les courriers de son service
+                    Q(responsable_actuel=user) |
+                    Q(created_by=user)
                 )
             else:
                 # Si pas de service, voit seulement ses créations
                 queryset = queryset.filter(created_by=user)
         
-
+        elif user.role == 'archiviste':
+            # L'archiviste ne voit que les courriers archivés
+            queryset = queryset.filter(archived=True)
         elif user.role == 'collaborateur':
             if user.service:
                 queryset = queryset.filter(service_actuel=user.service)
-        
+            else:
+                # ✅ Si le collaborateur n'a pas de service, il ne voit rien
+                queryset = queryset.none()
+        else:
+            # Rôle non reconnu (archiviste, etc.) : par défaut, ne rien voir pour éviter les fuites
+            queryset = queryset.none()
+
         if self.request.query_params.get("en_retard") == "true":
             queryset = queryset.filter(
                 date_echeance__lt=timezone.now().date(),
                 statut__in=['recu', 'impute', 'traitement']
             )
-        
+
         return queryset
     
     def get_serializer_class(self):
@@ -261,7 +258,11 @@ class CourrierViewSet(viewsets.ModelViewSet):
                 action="CREATION",
                 commentaire=f"Courrier {type_courrier} créé"
             )
-            
+
+            # NOTE : pas de notify_service() ici.
+            # La notification est déclenchée UNIQUEMENT dans imputer()
+            # pour éviter le doublon quand service_impute_id est déjà renseigné au create.
+
             return Response(
                 CourrierDetailSerializer(courrier, context={'request': request}).data,
                 status=status.HTTP_201_CREATED
@@ -306,14 +307,21 @@ class CourrierViewSet(viewsets.ModelViewSet):
                 commentaire=f"Imputé au service {service.nom}"
             )
             
-            # ── NOTIFICATION : alerter le chef du service imputé ──────────
-            if service.chef_id:
-                notify_user(
-                    user_id=service.chef_id,
-                    message=f"Nouveau courrier imputé à votre service : {courrier.reference}",
-                    notification_type="nouveau_courrier",
-                    data={"courrier_id": courrier.id, "reference": courrier.reference, "objet": courrier.objet}
-                )
+            # ── NOTIFICATION : alerter tout le service imputé ─────────────
+            # FIX DOUBLON : on n'appelle plus notify_user(chef) séparément
+            # notify_service() notifie TOUS les membres du service y compris le chef
+            # → le chef ne reçoit plus la notification en double
+            notify_service(
+                service_id=service.id,
+                message=f"Nouveau courrier à traiter : {courrier.reference} — {courrier.objet}",
+                notification_type="nouveau_courrier",
+                data={
+                    "courrier_id": courrier.id,
+                    "reference": courrier.reference,
+                    "objet": courrier.objet,
+                    "description": f"Imputé par {request.user.get_full_name() or request.user.email}",
+                }
+            )
             
             return Response(
                 {"message": "Courrier imputé avec succès", "imputation": ImputationSerializer(imputation).data},
@@ -350,8 +358,47 @@ class CourrierViewSet(viewsets.ModelViewSet):
         courrier.archived = True
         courrier.date_archivage = timezone.now().date()
         courrier.save(update_fields=['archived', 'date_archivage'])
-        ActionHistorique.objects.create(courrier=courrier, user=request.user, action="ARCHIVAGE")
+        ActionHistorique.objects.create(courrier=courrier, user=request.user, action="ARCHIVAGE",
+            commentaire=request.data.get('commentaire', 'Courrier archivé'))
         return Response({"message": "Courrier archivé"}, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=['post'], url_path='restaurer')
+    def restaurer(self, request, pk=None):
+        """Restaure un courrier archivé vers son statut précédent"""
+        # Permissions : seuls admin, chef, archiviste peuvent restaurer
+        if request.user.role not in ['admin', 'chef', 'direction', 'archiviste']:
+            return Response(
+                {"error": "Vous n'avez pas la permission de restaurer ce courrier"},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        try:
+            # get_object() respecte get_queryset() qui filtre archived
+            # On doit donc aller chercher directement
+            courrier = Courrier.objects.get(pk=pk, archived=True)
+        except Courrier.DoesNotExist:
+            return Response(
+                {"error": "Courrier archivé non trouvé"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        statut_restaure = request.data.get('statut', 'recu')
+        commentaire = request.data.get('commentaire', 'Courrier restauré depuis les archives')
+
+        courrier.archived = False
+        courrier.date_archivage = None
+        courrier.statut = statut_restaure
+        courrier.save(update_fields=['archived', 'date_archivage', 'statut'])
+
+        ActionHistorique.objects.create(
+            courrier=courrier,
+            user=request.user,
+            action="RESTAURATION",
+            commentaire=commentaire
+        )
+        return Response({
+            "message": f"Courrier {courrier.reference} restauré avec succès",
+            "statut": statut_restaure,
+        }, status=status.HTTP_200_OK)
     
     @action(detail=False, methods=['get'])
     def statistiques(self, request):
@@ -1261,12 +1308,18 @@ class CourrierViewSet(viewsets.ModelViewSet):
                 commentaire=commentaire
             )
 
-            # Notifier le chef du service
-            from courriers.notify import notify_user
-            if courrier.service_actuel and courrier.service_actuel.chef_id:
-                notify_user(
-                    user_id=courrier.service_actuel.chef_id,
-                    message=f"Le courrier {courrier.reference} a été clôturé par {user.get_full_name()}",
+            # Notifier le chef + tout le service de la clôture
+            if courrier.service_actuel:
+                if courrier.service_actuel.chef_id:
+                    notify_user(
+                        user_id=courrier.service_actuel.chef_id,
+                        message=f"Le courrier {courrier.reference} a été clôturé par {user.get_full_name()}",
+                        notification_type="courrier_cloture",
+                        data={"courrier_id": courrier.id, "reference": courrier.reference}
+                    )
+                notify_service(
+                    service_id=courrier.service_actuel.id,
+                    message=f"Courrier clôturé : {courrier.reference} — {courrier.objet}",
                     notification_type="courrier_cloture",
                     data={"courrier_id": courrier.id, "reference": courrier.reference}
                 )
@@ -1935,11 +1988,19 @@ class CourrierViewSet(viewsets.ModelViewSet):
                               "objet": courrier.objet, "expediteur": user.get_full_name(),
                               "commentaire": commentaire}
                     )
-                # Si transmission vers un service, notifier le chef du service
-                elif service_dest and service_dest.chef_id:
-                    notify_user(
-                        user_id=service_dest.chef_id,
-                        message=f"Un courrier a été transmis à votre service : {courrier.reference}",
+                # Si transmission vers un service, notifier chef + tous les membres
+                elif service_dest:
+                    if service_dest.chef_id:
+                        notify_user(
+                            user_id=service_dest.chef_id,
+                            message=f"Un courrier a été transmis à votre service : {courrier.reference}",
+                            notification_type="courrier_assigne",
+                            data={"courrier_id": courrier.id, "reference": courrier.reference,
+                                  "objet": courrier.objet, "expediteur": user.get_full_name()}
+                        )
+                    notify_service(
+                        service_id=service_dest.id,
+                        message=f"Courrier transmis à votre service : {courrier.reference} — {courrier.objet}",
                         notification_type="courrier_assigne",
                         data={"courrier_id": courrier.id, "reference": courrier.reference,
                               "objet": courrier.objet, "expediteur": user.get_full_name()}
@@ -2492,7 +2553,6 @@ class CourrierTraitementViewSet(viewsets.ViewSet):
     def get_queryset(self):
         """Retourne les courriers accessibles pour le traitement"""
         user = self.request.user
-        
         # Si admin ou direction, voir tout
         if user.role in ['admin', 'direction']:
             return Courrier.objects.filter(

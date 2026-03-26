@@ -120,6 +120,11 @@ urlpatterns = [
          CourrierViewSet.as_view({'post': 'cloturer_directement'}),
          name='courrier-cloturer-directement'),
 
+
+    path('courriers/<int:pk>/archiver/',
+         CourrierViewSet.as_view({'post': 'archiver'}),
+         name='courrier-archiver'),
+
     # Membres / affectation
     path('courriers/<int:pk>/membres-service/',
          CourrierViewSet.as_view({'get': 'membres_service'}),

@@ -3,16 +3,17 @@ import io
 import json
 import re
 import logging
-import google.generativeai as genai
 from pdf2image import convert_from_bytes
 from django.conf import settings
+from google import genai
+from google.genai import types
 
 logger = logging.getLogger(__name__)
 
 class GeminiOCR:
     def __init__(self):
-        genai.configure(api_key=settings.GEMINI_API_KEY)
-        self.model = genai.GenerativeModel('gemini-2.5-flash')
+        self.client = genai.Client(api_key=settings.GEMINI_API_KEY)
+        self.model = 'gemini-3-flash-preview'
 
     def extraire_texte_et_infos(self, fichier_bytes, mime_type, nom_fichier=""):
         """
@@ -32,6 +33,7 @@ Informations à extraire :
 - expediteur_email : adresse email (chaîne, "Non spécifié" si absent)
 - expediteur_telephone : numéro de téléphone (chaîne, "Non spécifié" si absent)
 - expediteur_adresse : adresse postale (chaîne, "Non spécifié" si absent)
+- reference_expediteur : référence ou numéro du courrier de départ (ex: "N°123/DG/2025", "Réf: ABC-456"), chaîne, "Non spécifié" si absent
 - date_courrier : date du document au format YYYY-MM-DD (chaîne, "Non spécifié" si absente)
 - destinataire_nom : nom du destinataire principal (chaîne, "Non spécifié" si absent)
 - categorie_suggeree : parmi ["RH", "FINANCE", "JURIDIQUE", "TECHNIQUE", "COMMERCIAL", "ADMINISTRATIF"]
@@ -48,6 +50,7 @@ Format de réponse : UNIQUEMENT un objet JSON valide avec deux clés : "texte" e
     "expediteur_email": "...",
     "expediteur_telephone": "...",
     "expediteur_adresse": "...",
+    "reference_expediteur": "...",
     "date_courrier": "YYYY-MM-DD",
     "destinataire_nom": "...",
     "categorie_suggeree": "...",
@@ -67,10 +70,17 @@ Format de réponse : UNIQUEMENT un objet JSON valide avec deux clés : "texte" e
                 # --- Première page : prompt complet pour obtenir le JSON ---
                 img_bytes = io.BytesIO()
                 images[0].save(img_bytes, format='JPEG')
-                response = self.model.generate_content([
-                    prompt_principal,
-                    {"mime_type": "image/jpeg", "data": img_bytes.getvalue()}
-                ])
+
+                response = self.client.models.generate_content(
+                    model=self.model,
+                    contents=[
+                        prompt_principal,
+                        types.Part.from_bytes(
+                            data=img_bytes.getvalue(),
+                            mime_type='image/jpeg'
+                        )
+                    ]
+                )
                 first_text = response.text
 
                 # Extraction du JSON
@@ -84,28 +94,47 @@ Format de réponse : UNIQUEMENT un objet JSON valide avec deux clés : "texte" e
                         texte_complet = first_text
                         extraction = {}
                 else:
-                    texte_complet = first_text
-                    extraction = {}
+                    # Essayer sans les backticks
+                    try:
+                        data = json.loads(first_text)
+                        texte_complet = data.get("texte", first_text)
+                        extraction = data.get("extraction", {})
+                    except json.JSONDecodeError:
+                        texte_complet = first_text
+                        extraction = {}
 
                 # --- Pages suivantes : seulement la transcription ---
                 for i in range(1, len(images)):
                     img_bytes = io.BytesIO()
                     images[i].save(img_bytes, format='JPEG')
-                    response = self.model.generate_content([
-                        "Continue la transcription de la page suivante. Ne répète pas les informations déjà extraites. Retourne uniquement le texte de cette page.",
-                        {"mime_type": "image/jpeg", "data": img_bytes.getvalue()}
-                    ])
+                    response = self.client.models.generate_content(
+                        model=self.model,
+                        contents=[
+                            "Continue la transcription de la page suivante. Ne répète pas les informations déjà extraites. Retourne uniquement le texte de cette page.",
+                            types.Part.from_bytes(
+                                data=img_bytes.getvalue(),
+                                mime_type='image/jpeg'
+                            )
+                        ]
+                    )
                     texte_complet += f"\n--- Page {i+1} ---\n{response.text}\n"
 
                 return {"texte": texte_complet, "extraction": extraction}
 
             else:
                 # Image seule
-                response = self.model.generate_content([
-                    prompt_principal,
-                    {"mime_type": mime_type, "data": fichier_bytes}
-                ])
+                response = self.client.models.generate_content(
+                    model=self.model,
+                    contents=[
+                        prompt_principal,
+                        types.Part.from_bytes(
+                            data=fichier_bytes,
+                            mime_type=mime_type
+                        )
+                    ]
+                )
                 text = response.text
+
                 match = re.search(r'```json\n(.*?)\n```', text, re.DOTALL)
                 if match:
                     try:
@@ -113,9 +142,15 @@ Format de réponse : UNIQUEMENT un objet JSON valide avec deux clés : "texte" e
                         return data
                     except json.JSONDecodeError:
                         pass
+                # Essayer sans les backticks
+                try:
+                    data = json.loads(text)
+                    return data
+                except json.JSONDecodeError:
+                    pass
+
                 return {"texte": text, "extraction": {}}
 
         except Exception as e:
             logger.error(f"Erreur Gemini OCR: {str(e)}", exc_info=True)
             raise Exception(f"Erreur API Gemini: {str(e)}")
-    
